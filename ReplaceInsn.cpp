@@ -1,4 +1,4 @@
-// c++ dyninst-ex3.cpp -g -o dyninst-ex3  -I /export/scratch/vaibhav/local/include -L /export/scratch/vaibhav/local/lib -ldyninstAPI -linstructionAPI -ldw -lelf -lpatchAPI -lsymtabAPI -std=c++0x -lparseAPI -lcommon
+// c++ ReplaceInsn.cpp -g -o ReplaceInsn  -I /export/scratch/vaibhav/local/include -L /export/scratch/vaibhav/local/lib -ldyninstAPI -linstructionAPI -ldw -lelf -lpatchAPI -lsymtabAPI -std=c++0x -lparseAPI -lcommon  
 
 #include <iostream>
 #include "CodeObject.h"
@@ -47,14 +47,49 @@ int main(int argc, char **argv){
 	for(int i=0; i<all_BPatch_funcs->size(); i++) {
 		all.push_back(PatchAPI::convert((*all_BPatch_funcs)[i]));
     Function *f = ParseAPI::convert((*all_BPatch_funcs)[i]);
-    //get address of entry point for current function
     
+		std::set<BPatch_basicBlock*> blocks;
+    BPatch_flowGraph *cfg = ( (*all_BPatch_funcs)[i] )->getCFG();
+    cfg->getAllBasicBlocks(blocks);
+    for (set<BPatch_basicBlock*>::reverse_iterator b = blocks.rbegin(); 
+				b != blocks.rend(); b++) {
+			PatchBlock::Insns insns;
+			PatchAPI::convert(*b)->getInsns(insns);
+      PatchBlock::Insns::iterator j;
+      for (j = insns.begin(); j != insns.end(); j++) {
+          // get instruction bytes
+          void *addr = (void*)((*j).first);
+					Instruction::Ptr iptr = (*j).second;
+          int nbytes = iptr->size();
+#define MAX_RAW_INSN_SIZE 16
+          assert(nbytes <= MAX_RAW_INSN_SIZE);
+          vector<Operand> operands;
+			    iptr->getOperands(operands);
+			    MyVisitor myVisitor;
+			    for(int i=0; i < operands.size(); i++) {
+			    	Expression::Ptr ePtr = operands[i].getValue();
+			      ePtr->apply(&myVisitor);
+			    }
+          if(myVisitor.getRegUsed() == "x86_64::eax" &&
+			    	 myVisitor.getIsImmediate() == 1 &&
+			    	 myVisitor.getImmediateValue() == 1 &&
+			    	 iptr->getOperation().getID() == e_add 
+			       ) {
+			    	cout<< "\ninteresting instruction: "<<iptr->format()<<endl;
+						buildReplacement();
+
+			    }             
+      }
+		}
+
+    //get address of entry point for current function
     Address crtAddr = f->addr();
     int instr_count = 0;
     InstructionDecoder decoder(f->isrc()->getPtrToInstruction(f->addr()),
   		InstructionDecoder::maxInstructionLength,
   		f->region()->getArch());
 		Instruction::Ptr instr = decoder.decode((unsigned char *)f->isrc()->getPtrToInstruction(crtAddr));
+
     auto fbl = f->blocks().end();
     fbl--;
     Block *b = *fbl;
