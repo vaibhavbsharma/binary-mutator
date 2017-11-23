@@ -64,7 +64,7 @@ string disassembleBlock(PatchBlock *block) {
     return str;
 }
 
-void buildReplacement(void *addr, Instruction *inst, Dyninst::PatchAPI::PatchBlock *block, bool patchAPI_debug)
+void buildReplacement(void *addr, Instruction *inst, Dyninst::PatchAPI::PatchBlock *block, bool patchAPI_debug, Point *point)
 {
     // build Dyninst::PatchAPI::Snippet
     bool success = true;
@@ -125,7 +125,7 @@ void buildReplacement(void *addr, Instruction *inst, Dyninst::PatchAPI::PatchBlo
     }
 
     // insert new code
-    InsertedCode::Ptr icode = Dyninst::PatchAPI::PatchModifier::insert(block->object(), handler, NULL);
+    InsertedCode::Ptr icode = Dyninst::PatchAPI::PatchModifier::insert(block->object(), handler, point);
     //InsertedCode::Ptr icode = Dyninst::PatchAPI::PatchModifier::insert(block->object(), handler, prePoint);
     //InsertedCode::Ptr icode = Dyninst::PatchAPI::PatchModifier::insert(block->object(), handler,
            //mainMgr->findPoint(Location::Block(instBlock), Point::BlockEntry, true));

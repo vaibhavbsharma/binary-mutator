@@ -37,6 +37,7 @@ int main(int argc, char **argv){
   }
   char *binaryPath = argv[1];
 	BPatch_addressSpace *handle = startInstrumenting(binaryPath);
+	handle->beginInsertionSet();
 	PatchMgrPtr patchMgrPtr = PatchAPI::convert(handle);
 
 	//PatchObject* obj = PatchAPI::convert(handle);
@@ -76,8 +77,15 @@ int main(int argc, char **argv){
 			    	 iptr->getOperation().getID() == e_add 
 			       ) {
 			    	cout<< "\ninteresting instruction: "<<iptr->format()<<endl;
-						buildReplacement();
-
+						PointMaker *pointMaker = patchMgrPtr->pointMaker();
+						Location loc = Location::InstructionInstance(
+								PatchAPI::convert((*all_BPatch_funcs)[i]),
+								PatchAPI::convert(*b), (Address)addr);
+						Point *point = pointMaker->createPoint(loc, Point::Type::PreInsn);
+						// Point *point = pointMaker->mkInsnPoint(Point::Type::None,
+						// 		patchMgrPtr, PatchAPI::convert(*b), (Address)addr, 
+						// 		iptr, PatchAPI::convert( (*all_BPatch_funcs)[i] ) );
+						buildReplacement(addr, &(*iptr), PatchAPI::convert(*b), false, point);
 			    }             
       }
 		}
@@ -141,6 +149,11 @@ int main(int argc, char **argv){
       std::cout << "\tBlock size:" << blk->size() << std::endl;
     }
   }
+  handle->finalizeInsertionSet(false);
+	string outFile = string(binaryPath) + "-2";
+  printf("Writing new binary to \"%s\" ...\n", outFile.c_str());
+  ((BPatch_binaryEdit*)handle)->writeFile(outFile.c_str());
+  printf("Done.\n");
   return 0;
 }
 
