@@ -15,8 +15,9 @@ int myprintf(const char *fmt, ...){
 
 int testfn() {
     myprintf("Hello World!\n");
-		int x = 2;
-    int a = 1 + x;
+		int x = 1;
+    int a = 1;
+		a = 1 + x;
 		if(a < 3) 
       myprintf("less\n");
 		else myprintf("greater than or equal to\n");

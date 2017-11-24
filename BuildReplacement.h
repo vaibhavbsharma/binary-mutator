@@ -68,7 +68,18 @@ void buildReplacement(void *addr, Instruction *inst, Dyninst::PatchAPI::PatchBlo
 {
     // build Dyninst::PatchAPI::Snippet
     bool success = true;
-    Dyninst::PatchAPI::Snippet::Ptr handler = Dyninst::PatchAPI::convert(new BPatch_nullExpr());
+    //Dyninst::PatchAPI::Snippet::Ptr handler = Dyninst::PatchAPI::convert(new BPatch_nullExpr());
+    // Dyninst::PatchAPI::Snippet::Ptr handler = Dyninst::PatchAPI::convert(
+		// 		Patch_plus, new BPatch_constExpr(42), new BPatch_registerExpr(Dyninst::x86_64::eax));
+
+		BPatch_registerExpr *intCounter = new BPatch_registerExpr(Dyninst::x86_64::eax);
+    BPatch_arithExpr *add42 = 
+			new BPatch_arithExpr(BPatch_plus, *intCounter, BPatch_constExpr(42));
+		BPatch_arithExpr *addOne = new BPatch_arithExpr(BPatch_assign, *intCounter,
+				 *add42);
+    Snippet::Ptr handler = PatchAPI::convert(addOne);
+    
+		//Snippet::Ptr handler = PatchAPI::convert(new BPatch_constExpr(1));
 
     // CFG surgery (remove the old instruction and insert the new Dyninst::PatchAPI::Snippet)
     //

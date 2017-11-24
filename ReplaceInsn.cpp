@@ -85,70 +85,70 @@ int main(int argc, char **argv){
 						// Point *point = pointMaker->mkInsnPoint(Point::Type::None,
 						// 		patchMgrPtr, PatchAPI::convert(*b), (Address)addr, 
 						// 		iptr, PatchAPI::convert( (*all_BPatch_funcs)[i] ) );
-						buildReplacement(addr, &(*iptr), PatchAPI::convert(*b), false, point);
+						buildReplacement(addr, &(*iptr), PatchAPI::convert(*b), true, point);
 			    }             
       }
 		}
 
-    //get address of entry point for current function
-    Address crtAddr = f->addr();
-    int instr_count = 0;
-    InstructionDecoder decoder(f->isrc()->getPtrToInstruction(f->addr()),
-  		InstructionDecoder::maxInstructionLength,
-  		f->region()->getArch());
-		Instruction::Ptr instr = decoder.decode((unsigned char *)f->isrc()->getPtrToInstruction(crtAddr));
+    // //get address of entry point for current function
+    // Address crtAddr = f->addr();
+    // int instr_count = 0;
+    // InstructionDecoder decoder(f->isrc()->getPtrToInstruction(f->addr()),
+  	// 	InstructionDecoder::maxInstructionLength,
+  	// 	f->region()->getArch());
+		// Instruction::Ptr instr = decoder.decode((unsigned char *)f->isrc()->getPtrToInstruction(crtAddr));
 
-    auto fbl = f->blocks().end();
-    fbl--;
-    Block *b = *fbl;
-    Address lastAddr = b->last();
-    //if current function has zero instructions, dont output it
-    if(crtAddr == lastAddr)
-    continue;
-    cout << "\n\n\"" << f->name() << "\" :";
-    while(crtAddr < lastAddr){
-      //decode current instruction
-      instr = decoder.decode((unsigned char *)f->isrc()->getPtrToInstruction(crtAddr));
-      cout << "\n" << hex << crtAddr;
-      cout << ": \"" << instr->format() << "\"";
-      //go to the address of the next instruction
-      crtAddr += instr->size();
-			vector<Operand> operands;
-			instr->getOperands(operands);
-			cout<< " ("<<operands.size()<<")";
-			MyVisitor myVisitor;
-			for(int i=0; i < operands.size(); i++) {
-				Expression::Ptr ePtr = operands[i].getValue();
-			  ePtr->apply(&myVisitor);
-			}
-      if(myVisitor.getRegUsed() == "x86_64::eax" &&
-				 myVisitor.getIsImmediate() == 1 &&
-				 myVisitor.getImmediateValue() == 1 &&
-				 instr->getOperation().getID() == e_add 
-			   ) {
-				cout<< " interesting instruction";
+    // auto fbl = f->blocks().end();
+    // fbl--;
+    // Block *b = *fbl;
+    // Address lastAddr = b->last();
+    // //if current function has zero instructions, dont output it
+    // if(crtAddr == lastAddr)
+    // continue;
+    // cout << "\n\n\"" << f->name() << "\" :";
+    // while(crtAddr < lastAddr){
+    //   //decode current instruction
+    //   instr = decoder.decode((unsigned char *)f->isrc()->getPtrToInstruction(crtAddr));
+    //   cout << "\n" << hex << crtAddr;
+    //   cout << ": \"" << instr->format() << "\"";
+    //   //go to the address of the next instruction
+    //   crtAddr += instr->size();
+		// 	vector<Operand> operands;
+		// 	instr->getOperands(operands);
+		// 	cout<< " ("<<operands.size()<<")";
+		// 	MyVisitor myVisitor;
+		// 	for(int i=0; i < operands.size(); i++) {
+		// 		Expression::Ptr ePtr = operands[i].getValue();
+		// 	  ePtr->apply(&myVisitor);
+		// 	}
+    //   if(myVisitor.getRegUsed() == "x86_64::eax" &&
+		// 		 myVisitor.getIsImmediate() == 1 &&
+		// 		 myVisitor.getImmediateValue() == 1 &&
+		// 		 instr->getOperation().getID() == e_add 
+		// 	   ) {
+		// 		cout<< " interesting instruction";
 
-			}
-      instr_count++;
-			fflush(stdout);
-    }
+		// 	}
+    //   instr_count++;
+		// 	fflush(stdout);
+    // }
 	}
   //obj->funcs(back_inserter(all));
   
-  for (std::vector<PatchFunction*>::iterator fi = all.begin();
-    fi != all.end(); fi++) {
-    // Print out each function’s name
-    PatchFunction* func = *fi;
-    std::cout << func->name() << std::endl;
-    
-    const PatchFunction::Blockset & blks = func->blocks();
-    for (PatchFunction::Blockset::iterator bi = blks.begin();
-      bi != blks.end(); bi++) {
-      // Print out each block’s size
-      PatchBlock* blk = *bi;
-      std::cout << "\tBlock size:" << blk->size() << std::endl;
-    }
-  }
+  // for (std::vector<PatchFunction*>::iterator fi = all.begin();
+  //   fi != all.end(); fi++) {
+  //   // Print out each function’s name
+  //   PatchFunction* func = *fi;
+  //   std::cout << func->name() << std::endl;
+  //   
+  //   const PatchFunction::Blockset & blks = func->blocks();
+  //   for (PatchFunction::Blockset::iterator bi = blks.begin();
+  //     bi != blks.end(); bi++) {
+  //     // Print out each block’s size
+  //     PatchBlock* blk = *bi;
+  //     std::cout << "\tBlock size:" << blk->size() << std::endl;
+  //   }
+  // }
   handle->finalizeInsertionSet(false);
 	string outFile = string(binaryPath) + "-2";
   printf("Writing new binary to \"%s\" ...\n", outFile.c_str());
