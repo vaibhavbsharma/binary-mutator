@@ -15,6 +15,7 @@
 #include "BPatch_point.h"
 #include "BPatch_flowGraph.h"
 
+#include "Mutation.h"
 
 using namespace std;
 using namespace Dyninst;
@@ -35,6 +36,7 @@ int main(int argc, char **argv){
     printf("Usage: %s <binary path>\n", argv[0]);
     return -1;
   }
+	initMutationCheckpoint();
   char *binaryPath = argv[1];
 	BPatch_addressSpace *handle = startInstrumenting(binaryPath);
 	handle->beginInsertionSet();
@@ -45,30 +47,31 @@ int main(int argc, char **argv){
   // Find all functions in the object
   std::vector<PatchFunction*> all;
 	vector<BPatch_function *> *all_BPatch_funcs = handle->getImage()->getProcedures();
-	for(int i=0; i<all_BPatch_funcs->size(); i++) {
+	bool mutated = false;
+	for(int i=0; i<all_BPatch_funcs->size() && !mutated; i++) {
 		all.push_back(PatchAPI::convert((*all_BPatch_funcs)[i]));
     Function *f = ParseAPI::convert((*all_BPatch_funcs)[i]);
 		cout<< " found function : "<<f->name()<<" ("<< 
 			(f->name().find("testfn") != string::npos)<<")"<<endl;
-		// bool is_testFn = false;
-		// if(f->name().find("testfn") != string::npos) is_testFn = true;
+		bool is_testFn = false;
+		if(f->name().find("testfn") != string::npos) is_testFn = true;
     
 		std::set<BPatch_basicBlock*> blocks;
     BPatch_flowGraph *cfg = ( (*all_BPatch_funcs)[i] )->getCFG();
     cfg->getAllBasicBlocks(blocks);
     for (set<BPatch_basicBlock*>::reverse_iterator b = blocks.rbegin(); 
-				b != blocks.rend(); b++) {
+				b != blocks.rend() && !mutated; b++) {
 			PatchBlock::Insns insns;
 			PatchBlock *patchBlock = PatchAPI::convert(*b);
 			patchBlock->getInsns(insns);
       PatchBlock::Insns::iterator j;
-      for (j = insns.begin(); j != insns.end(); j++) {
+      for (j = insns.begin(); j != insns.end() && !mutated; j++) {
           // get instruction bytes
           void *addr = (void*)((*j).first);
 					Instruction::Ptr iptr = (*j).second;
-					// if(is_testFn) {
-					// 	cout<<" "<<iptr->format()<<endl;
-					// }
+					if(is_testFn) {
+						cout<<" "<<iptr->format()<<endl;
+					}
           int nbytes = iptr->size();
 #define MAX_RAW_INSN_SIZE 16
           assert(nbytes <= MAX_RAW_INSN_SIZE);
@@ -99,14 +102,41 @@ int main(int argc, char **argv){
 					// 	buildReplacement(addr, &(*iptr), patchBlock, true, point, handler);
 			    // } 
 					if(f->name().find("testfn") != string::npos &&
-							iptr->getOperation().getID() == e_jnle) {
-						cout << "\nfound jnle in testfn\n";
+							//iptr->getOperation().getID() == e_jnle)
+							iptr->getCategory()==c_BranchInsn && 
+							iptr->getOperation().getID() != e_jmp &&
+							!mutatedBranch(addr, COND_NOT_TAKEN) &&
+							!mutated) {
+						cout << "\nfound branch in testfn (COND_NOT_TAKEN) \n";
 						vector<PatchEdge *> edges = patchBlock->targets();
 						assert(edges.size()==2);
 						if(edges[0]->type() == COND_NOT_TAKEN) {
 							PatchModifier::redirect(edges[0], edges[1]->trg());
+							checkpointMutation(addr, COND_NOT_TAKEN);
+							mutated = true;
 						} else if(edges[1]->type() == COND_NOT_TAKEN) {
 							PatchModifier::redirect(edges[1], edges[0]->trg());
+							checkpointMutation(addr, COND_NOT_TAKEN);
+							mutated = true;
+						}
+					}
+					if(f->name().find("testfn") != string::npos &&
+							//iptr->getOperation().getID() == e_jnle)
+							iptr->getCategory()==c_BranchInsn &&
+							iptr->getOperation().getID() != e_jmp &&
+							!mutatedBranch(addr, COND_TAKEN) &&
+							!mutated) {
+						cout << "\nfound branch in testfn (COND_TAKEN) \n";
+						vector<PatchEdge *> edges = patchBlock->targets();
+						assert(edges.size()==2);
+						if(edges[0]->type() == COND_TAKEN) {
+							PatchModifier::redirect(edges[0], edges[1]->trg());
+							checkpointMutation(addr, COND_TAKEN);
+							mutated = true;
+						} else if(edges[1]->type() == COND_TAKEN) {
+							PatchModifier::redirect(edges[1], edges[0]->trg());
+							checkpointMutation(addr, COND_TAKEN);
+							mutated = true;
 						}
 					}
       }
@@ -171,8 +201,11 @@ int main(int argc, char **argv){
   //     std::cout << "\tBlock size:" << blk->size() << std::endl;
   //   }
   // }
+	if(!mutated) { cout <<"No mutations found\n"; return 1; }
   handle->finalizeInsertionSet(false);
-	string outFile = string(binaryPath) + "-2";
+	char str[10];
+	sprintf(str, "%s-%u", binaryPath, (unsigned int)mutatedInsns.size());
+	string outFile(str);
   printf("Writing new binary to \"%s\" ...\n", outFile.c_str());
   ((BPatch_binaryEdit*)handle)->writeFile(outFile.c_str());
   printf("Done.\n");
