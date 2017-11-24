@@ -48,6 +48,10 @@ int main(int argc, char **argv){
 	for(int i=0; i<all_BPatch_funcs->size(); i++) {
 		all.push_back(PatchAPI::convert((*all_BPatch_funcs)[i]));
     Function *f = ParseAPI::convert((*all_BPatch_funcs)[i]);
+		cout<< " found function : "<<f->name()<<" ("<< 
+			(f->name().find("testfn") != string::npos)<<")"<<endl;
+		// bool is_testFn = false;
+		// if(f->name().find("testfn") != string::npos) is_testFn = true;
     
 		std::set<BPatch_basicBlock*> blocks;
     BPatch_flowGraph *cfg = ( (*all_BPatch_funcs)[i] )->getCFG();
@@ -55,12 +59,16 @@ int main(int argc, char **argv){
     for (set<BPatch_basicBlock*>::reverse_iterator b = blocks.rbegin(); 
 				b != blocks.rend(); b++) {
 			PatchBlock::Insns insns;
-			PatchAPI::convert(*b)->getInsns(insns);
+			PatchBlock *patchBlock = PatchAPI::convert(*b);
+			patchBlock->getInsns(insns);
       PatchBlock::Insns::iterator j;
       for (j = insns.begin(); j != insns.end(); j++) {
           // get instruction bytes
           void *addr = (void*)((*j).first);
 					Instruction::Ptr iptr = (*j).second;
+					// if(is_testFn) {
+					// 	cout<<" "<<iptr->format()<<endl;
+					// }
           int nbytes = iptr->size();
 #define MAX_RAW_INSN_SIZE 16
           assert(nbytes <= MAX_RAW_INSN_SIZE);
@@ -71,22 +79,36 @@ int main(int argc, char **argv){
 			    	Expression::Ptr ePtr = operands[i].getValue();
 			      ePtr->apply(&myVisitor);
 			    }
-          if(myVisitor.getRegUsed() == "x86_64::eax" &&
-			    	 myVisitor.getIsImmediate() == 1 &&
-			    	 myVisitor.getImmediateValue() == 1 &&
-			    	 iptr->getOperation().getID() == e_add 
-			       ) {
-			    	cout<< "\ninteresting instruction: "<<iptr->format()<<endl;
-						PointMaker *pointMaker = patchMgrPtr->pointMaker();
-						Location loc = Location::InstructionInstance(
-								PatchAPI::convert((*all_BPatch_funcs)[i]),
-								PatchAPI::convert(*b), (Address)addr);
-						Point *point = pointMaker->createPoint(loc, Point::Type::PreInsn);
-						// Point *point = pointMaker->mkInsnPoint(Point::Type::None,
-						// 		patchMgrPtr, PatchAPI::convert(*b), (Address)addr, 
-						// 		iptr, PatchAPI::convert( (*all_BPatch_funcs)[i] ) );
-						buildReplacement(addr, &(*iptr), PatchAPI::convert(*b), true, point);
-			    }             
+          // if(myVisitor.getRegUsed() == "x86_64::eax" &&
+			    // 	 myVisitor.getIsImmediate() == 1 &&
+			    // 	 myVisitor.getImmediateValue() == 1 &&
+			    // 	 iptr->getOperation().getID() == e_add &&
+					// 	 f->name().find("testfn") != string::npos) {
+			    // 	cout<< "\nfound add %eax: "<<iptr->format()<<endl;
+					// 	PointMaker *pointMaker = patchMgrPtr->pointMaker();
+					// 	Location loc = Location::InstructionInstance(
+					// 			PatchAPI::convert((*all_BPatch_funcs)[i]),
+					// 			patchBLock, (Address)addr);
+					// 	Point *point = pointMaker->createPoint(loc, Point::Type::PreInsn);
+					// 	BPatch_registerExpr *intCounter = new BPatch_registerExpr(Dyninst::x86_64::eax);
+          //   BPatch_arithExpr *add42 = 
+		      //   	new BPatch_arithExpr(BPatch_plus, *intCounter, BPatch_constExpr(42));
+		      //   BPatch_arithExpr *addOne = new BPatch_arithExpr(BPatch_assign, *intCounter,
+		      //   		 *add42);
+          //   Snippet::Ptr handler = PatchAPI::convert(addOne);
+					// 	buildReplacement(addr, &(*iptr), patchBlock, true, point, handler);
+			    // } 
+					if(f->name().find("testfn") != string::npos &&
+							iptr->getOperation().getID() == e_jnle) {
+						cout << "\nfound jnle in testfn\n";
+						vector<PatchEdge *> edges = patchBlock->targets();
+						assert(edges.size()==2);
+						if(edges[0]->type() == COND_NOT_TAKEN) {
+							PatchModifier::redirect(edges[0], edges[1]->trg());
+						} else if(edges[1]->type() == COND_NOT_TAKEN) {
+							PatchModifier::redirect(edges[1], edges[0]->trg());
+						}
+					}
       }
 		}
 
@@ -103,7 +125,7 @@ int main(int argc, char **argv){
     // Block *b = *fbl;
     // Address lastAddr = b->last();
     // //if current function has zero instructions, dont output it
-    // if(crtAddr == lastAddr)
+    // if(crtAddr == lastAddr || !is_testFn)
     // continue;
     // cout << "\n\n\"" << f->name() << "\" :";
     // while(crtAddr < lastAddr){
