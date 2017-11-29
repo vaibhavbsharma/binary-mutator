@@ -16,6 +16,7 @@
 #include "BPatch_flowGraph.h"
 
 #include "Mutation.h"
+#include "InsnUtils.h"
 
 using namespace std;
 using namespace Dyninst;
@@ -101,6 +102,57 @@ int main(int argc, char **argv){
           //   Snippet::Ptr handler = PatchAPI::convert(addOne);
 					// 	buildReplacement(addr, &(*iptr), patchBlock, true, point, handler);
 			    // } 
+			    if(isCMOVCC(iptr->getOperation().getID()) &&
+						 f->name().find("testfn") != string::npos &&
+						 (!mutatedBranch(addr, COND_NOT_TAKEN) ||
+							!mutatedBranch(addr, COND_TAKEN)) && 
+						 !mutated) {
+			    	cout<< "\nfound cmovCC: "<<iptr->format()<<endl;
+						PointMaker *pointMaker = patchMgrPtr->pointMaker();
+						Location loc = Location::InstructionInstance(
+								PatchAPI::convert((*all_BPatch_funcs)[i]),
+								patchBlock, (Address)addr);
+						Point *point = pointMaker->createPoint(loc, Point::Type::PreInsn);
+						Snippet::Ptr handler;
+						EdgeTypeEnum condition;
+						if(!mutatedBranch(addr, COND_NOT_TAKEN)) {
+						  BPatch_constExpr *nop = new BPatch_constExpr(42);
+              handler = PatchAPI::convert(nop);
+							condition = COND_NOT_TAKEN;
+							cout<<"\n replacing with nop\n";
+						} else if(!mutatedBranch(addr, COND_TAKEN)) {
+							MachRegister srcReg, dstReg;
+              vector<Operand> operands;
+			        iptr->getOperands(operands);
+			        MyVisitor *myVisitor = new MyVisitor();
+			        Expression::Ptr ePtr = operands[0].getValue();
+			        ePtr->apply(myVisitor);
+						  BPatch_registerExpr *dst = new BPatch_registerExpr(myVisitor->getRegUsed());
+							dstReg = myVisitor->getRegUsed();
+							myVisitor = new MyVisitor();
+              ePtr = operands[1].getValue();
+			        ePtr->apply(myVisitor);
+							// if source is register
+							if(myVisitor->getRegUsed() != Dyninst::x86_64::rip) {
+						    BPatch_registerExpr *src = new BPatch_registerExpr(myVisitor->getRegUsed());
+							  srcReg = myVisitor->getRegUsed();
+		            BPatch_arithExpr *mov= new BPatch_arithExpr(BPatch_assign, *dst, *src);
+                handler = PatchAPI::convert(mov);
+							  cout<<"\n replacing with "<<dstReg.name() <<" = " << srcReg.name()<<endl;
+							} else { // source is immediate
+						    BPatch_constExpr *src = new BPatch_constExpr(myVisitor->getImmediateValue());
+		            BPatch_arithExpr *mov= new BPatch_arithExpr(BPatch_assign, *dst, *src);
+                handler = PatchAPI::convert(mov);
+							  cout<<"\n replacing with "<<dstReg.name() <<" = " 
+									<< myVisitor->getImmediateValue()<<endl;
+							}
+							condition = COND_TAKEN;
+						}
+						buildReplacement(addr, &(*iptr), patchBlock, true, point, handler);
+					  checkpointMutation(addr, condition);
+						mutated = true;
+			    } 
+
 					if(f->name().find("testfn") != string::npos &&
 							//iptr->getOperation().getID() == e_jnle)
 							iptr->getCategory()==c_BranchInsn && 

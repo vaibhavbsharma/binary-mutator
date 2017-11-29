@@ -12,7 +12,7 @@ class MyVisitor: public Dyninst::InstructionAPI::Visitor {
   public :
     MyVisitor ( bool _debug=false) { 
 			isImmediate = 0; 
-			regUsed = ""; 
+			regUsed = Dyninst::x86_64::rip; 
 			immediateValue = -1;
 			debug = _debug;
 		};
@@ -26,16 +26,18 @@ class MyVisitor: public Dyninst::InstructionAPI::Visitor {
 			return immediateValue; 
 		}
 
-		string regUsed;
-		const string getRegUsed() {
-			if(debug) cout<< " returning reg("<<regUsed<<") ";
+		Dyninst::MachRegister regUsed;
+		const Dyninst::MachRegister getRegUsed() {
+			if(debug) cout<< " returning reg("<<regUsed.name()<<") ";
 			return regUsed; 
 		}
 
     int isImmediate, immediateValue;
     int getIsImmediate() { return isImmediate; }
-    virtual void visit ( Dyninst::InstructionAPI::BinaryFunction * b ) {
+    
+		virtual void visit ( Dyninst::InstructionAPI::BinaryFunction * b ) {
     };
+
     virtual void visit ( Dyninst::InstructionAPI::Immediate * i ) {
 			Dyninst::InstructionAPI::Result result = i->eval();
 			if(debug) cout << " \t Immediate value = " << result.format()<<" ";
@@ -46,11 +48,12 @@ class MyVisitor: public Dyninst::InstructionAPI::Visitor {
     };
 
     virtual void visit ( Dyninst::InstructionAPI::RegisterAST * r ) {
-			regUsed = r->getID().name();
+			regUsed = r->getID();
       if(debug) cout <<" \tVisiting register " << r -> getID ().name ()<< " " ;
 			if(r -> getID() == Dyninst::x86_64::eax) {
-				if(debug) cout<<" visited eax ("<<regUsed<<")";
+				if(debug) cout<<" visited eax ("<<regUsed.name()<<")";
 			}
     }
-    virtual void visit ( Dyninst::InstructionAPI::Dereference * d ) {};
+    
+		virtual void visit ( Dyninst::InstructionAPI::Dereference * d ) {};
 };
