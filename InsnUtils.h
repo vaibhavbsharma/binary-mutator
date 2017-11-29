@@ -20,3 +20,26 @@ bool isCMOVCC(entryID e) {
 		default: return false;
 	}
 }
+
+bool isSETCC(entryID e) {
+	switch(e) {
+	  case e_setb:
+    case e_setbe:
+    case e_setl:
+    case e_setle:
+    case e_setnb:
+    case e_setnbe:
+    case e_setnl:
+    case e_setnle:
+    case e_setno:
+    case e_setnp:
+    case e_setns:
+    case e_setnz:
+    case e_seto:
+    case e_setp:
+    case e_sets:
+    case e_setz:
+			return true;
+		default: return false;
+	}
+}

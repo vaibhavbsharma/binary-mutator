@@ -33,35 +33,48 @@ BPatch_addressSpace *startInstrumenting(const char *name) {
 }
 
 int main(int argc, char **argv){
-  if(argc != 2){
-    printf("Usage: %s <binary path>\n", argv[0]);
+  if(argc < 2){
+    printf("Usage: %s <binary path> [function-name]\n", argv[0]);
     return -1;
   }
 	initMutationCheckpoint();
   char *binaryPath = argv[1];
+	char *functionName;
+	bool singleFunction = false;
+	if(argc > 2) {
+		functionName = argv[2];
+		singleFunction = true;
+	}
+	else { 
+		functionName = 0;
+		singleFunction = false; 
+	}
 	BPatch_addressSpace *handle = startInstrumenting(binaryPath);
 	handle->beginInsertionSet();
 	PatchMgrPtr patchMgrPtr = PatchAPI::convert(handle);
-
+  bool debug = true;
 	//PatchObject* obj = PatchAPI::convert(handle);
   
   // Find all functions in the object
   std::vector<PatchFunction*> all;
 	vector<BPatch_function *> *all_BPatch_funcs = handle->getImage()->getProcedures();
 	bool mutated = false;
+	EdgeTypeEnum condition;
+	string conditionString;
+	string mutationSuffix;
 	for(int i=0; i<all_BPatch_funcs->size() && !mutated; i++) {
 		all.push_back(PatchAPI::convert((*all_BPatch_funcs)[i]));
     Function *f = ParseAPI::convert((*all_BPatch_funcs)[i]);
-		cout<< " found function : "<<f->name()<<" ("<< 
-			(f->name().find("testfn") != string::npos)<<")"<<endl;
-		bool is_testFn = false;
-		if(f->name().find("testfn") != string::npos) is_testFn = true;
+		if(debug)
+		  cout<< " found function : "<<f->name()<<endl;
+		if(singleFunction)
+			if(f->name().find(functionName) == string::npos) continue; 
     
 		std::set<BPatch_basicBlock*> blocks;
     BPatch_flowGraph *cfg = ( (*all_BPatch_funcs)[i] )->getCFG();
     cfg->getAllBasicBlocks(blocks);
-    for (set<BPatch_basicBlock*>::reverse_iterator b = blocks.rbegin(); 
-				b != blocks.rend() && !mutated; b++) {
+    for (set<BPatch_basicBlock*>::iterator b = blocks.begin(); 
+				b != blocks.end() && !mutated; b++) {
 			PatchBlock::Insns insns;
 			PatchBlock *patchBlock = PatchAPI::convert(*b);
 			patchBlock->getInsns(insns);
@@ -70,24 +83,24 @@ int main(int argc, char **argv){
           // get instruction bytes
           void *addr = (void*)((*j).first);
 					Instruction::Ptr iptr = (*j).second;
-					if(is_testFn) {
+					if(debug) {
 						cout<<" "<<iptr->format()<<endl;
 					}
           int nbytes = iptr->size();
 #define MAX_RAW_INSN_SIZE 16
           assert(nbytes <= MAX_RAW_INSN_SIZE);
-          vector<Operand> operands;
-			    iptr->getOperands(operands);
-			    MyVisitor myVisitor;
-			    for(int i=0; i < operands.size(); i++) {
-			    	Expression::Ptr ePtr = operands[i].getValue();
-			      ePtr->apply(&myVisitor);
-			    }
+          // vector<Operand> operands;
+			    // iptr->getOperands(operands);
+			    // MyVisitor myVisitor;
+			    // for(int i=0; i < operands.size(); i++) {
+			    // 	Expression::Ptr ePtr = operands[i].getValue();
+			    //   ePtr->apply(&myVisitor);
+			    // }
           // if(myVisitor.getRegUsed() == "x86_64::eax" &&
 			    // 	 myVisitor.getIsImmediate() == 1 &&
 			    // 	 myVisitor.getImmediateValue() == 1 &&
 			    // 	 iptr->getOperation().getID() == e_add &&
-					// 	 f->name().find("testfn") != string::npos) {
+					// 	 f->name().find(functionName) != string::npos) {
 			    // 	cout<< "\nfound add %eax: "<<iptr->format()<<endl;
 					// 	PointMaker *pointMaker = patchMgrPtr->pointMaker();
 					// 	Location loc = Location::InstructionInstance(
@@ -103,7 +116,6 @@ int main(int argc, char **argv){
 					// 	buildReplacement(addr, &(*iptr), patchBlock, true, point, handler);
 			    // } 
 			    if(isCMOVCC(iptr->getOperation().getID()) &&
-						 f->name().find("testfn") != string::npos &&
 						 (!mutatedBranch(addr, COND_NOT_TAKEN) ||
 							!mutatedBranch(addr, COND_TAKEN)) && 
 						 !mutated) {
@@ -114,11 +126,11 @@ int main(int argc, char **argv){
 								patchBlock, (Address)addr);
 						Point *point = pointMaker->createPoint(loc, Point::Type::PreInsn);
 						Snippet::Ptr handler;
-						EdgeTypeEnum condition;
 						if(!mutatedBranch(addr, COND_NOT_TAKEN)) {
 						  BPatch_constExpr *nop = new BPatch_constExpr(42);
               handler = PatchAPI::convert(nop);
 							condition = COND_NOT_TAKEN;
+							conditionString = "NOP";
 							cout<<"\n replacing with nop\n";
 						} else if(!mutatedBranch(addr, COND_TAKEN)) {
 							MachRegister srcReg, dstReg;
@@ -147,47 +159,109 @@ int main(int argc, char **argv){
 									<< myVisitor->getImmediateValue()<<endl;
 							}
 							condition = COND_TAKEN;
+							conditionString = "MOV";
 						}
 						buildReplacement(addr, &(*iptr), patchBlock, true, point, handler);
 					  checkpointMutation(addr, condition);
+						char tmpString[20];
+						sprintf(tmpString, "0x%x", addr);
+						mutationSuffix = tmpString;
+						mutationSuffix += "-cmovCC-" + conditionString;
 						mutated = true;
-			    } 
+			    }
 
-					if(f->name().find("testfn") != string::npos &&
-							//iptr->getOperation().getID() == e_jnle)
-							iptr->getCategory()==c_BranchInsn && 
+          if(isSETCC(iptr->getOperation().getID()) &&
+						 (!mutatedBranch(addr, COND_NOT_TAKEN) ||
+							!mutatedBranch(addr, COND_TAKEN)) && 
+						 !mutated) {
+			    	cout<< "\nfound setCC: "<<iptr->format()<<endl;
+						PointMaker *pointMaker = patchMgrPtr->pointMaker();
+						Location loc = Location::InstructionInstance(
+								PatchAPI::convert((*all_BPatch_funcs)[i]),
+								patchBlock, (Address)addr);
+						Point *point = pointMaker->createPoint(loc, Point::Type::PreInsn);
+						Snippet::Ptr handler;
+						EdgeTypeEnum condition;
+            MachRegister srcReg, dstReg;
+            vector<Operand> operands;
+			      iptr->getOperands(operands);
+			      MyVisitor *myVisitor = new MyVisitor();
+			      Expression::Ptr ePtr = operands[0].getValue();
+			      ePtr->apply(myVisitor);
+						BPatch_registerExpr *dst = new BPatch_registerExpr(myVisitor->getRegUsed());
+						dstReg = myVisitor->getRegUsed();
+
+						if(!mutatedBranch(addr, COND_NOT_TAKEN)) {
+						  BPatch_constExpr *setZero = new BPatch_constExpr(0);
+		          BPatch_arithExpr *mov= new BPatch_arithExpr(BPatch_assign, *dst, *setZero);
+              handler = PatchAPI::convert(mov);
+							condition = COND_NOT_TAKEN;
+							conditionString = "SET0";
+							cout<<"\n setting "<<dstReg.name()<<" to 0\n";
+						} else if(!mutatedBranch(addr, COND_TAKEN)) {
+             BPatch_constExpr *setOne = new BPatch_constExpr(1);
+		          BPatch_arithExpr *mov= new BPatch_arithExpr(BPatch_assign, *dst, *setOne);
+              handler = PatchAPI::convert(mov);
+							condition = COND_TAKEN;
+							conditionString = "SET1";
+							cout<<"\n setting "<<dstReg.name()<<" to 1\n";
+						}
+						buildReplacement(addr, &(*iptr), patchBlock, true, point, handler);
+					  checkpointMutation(addr, condition);
+						char tmpString[20];
+						sprintf(tmpString, "0x%x", addr);
+						mutationSuffix = tmpString;
+						mutationSuffix += "-setCC-" + conditionString;
+						mutated = true;
+			    }
+
+					if(iptr->getCategory()==c_BranchInsn && 
 							iptr->getOperation().getID() != e_jmp &&
 							!mutatedBranch(addr, COND_NOT_TAKEN) &&
 							!mutated) {
-						cout << "\nfound branch in testfn (COND_NOT_TAKEN) \n";
+						cout << "\nfound branch (COND_NOT_TAKEN) \n";
 						vector<PatchEdge *> edges = patchBlock->targets();
 						assert(edges.size()==2);
 						if(edges[0]->type() == COND_NOT_TAKEN) {
 							PatchModifier::redirect(edges[0], edges[1]->trg());
 							checkpointMutation(addr, COND_NOT_TAKEN);
+						  char tmpString[20];
+						  sprintf(tmpString, "0x%x", addr);
+						  mutationSuffix = tmpString;
+						  mutationSuffix += "-jCC-CNT";
 							mutated = true;
 						} else if(edges[1]->type() == COND_NOT_TAKEN) {
 							PatchModifier::redirect(edges[1], edges[0]->trg());
 							checkpointMutation(addr, COND_NOT_TAKEN);
+						  char tmpString[20];
+						  sprintf(tmpString, "0x%x", addr);
+						  mutationSuffix = tmpString;
+						  mutationSuffix += "-jCC-CNT";
 							mutated = true;
 						}
 					}
-					if(f->name().find("testfn") != string::npos &&
-							//iptr->getOperation().getID() == e_jnle)
-							iptr->getCategory()==c_BranchInsn &&
+					if(iptr->getCategory()==c_BranchInsn &&
 							iptr->getOperation().getID() != e_jmp &&
 							!mutatedBranch(addr, COND_TAKEN) &&
 							!mutated) {
-						cout << "\nfound branch in testfn (COND_TAKEN) \n";
+						cout << "\nfound branch (COND_TAKEN) \n";
 						vector<PatchEdge *> edges = patchBlock->targets();
 						assert(edges.size()==2);
 						if(edges[0]->type() == COND_TAKEN) {
 							PatchModifier::redirect(edges[0], edges[1]->trg());
 							checkpointMutation(addr, COND_TAKEN);
+						  char tmpString[20];
+						  sprintf(tmpString, "0x%x", addr);
+						  mutationSuffix = tmpString;
+						  mutationSuffix += "-jCC-CT";
 							mutated = true;
 						} else if(edges[1]->type() == COND_TAKEN) {
 							PatchModifier::redirect(edges[1], edges[0]->trg());
 							checkpointMutation(addr, COND_TAKEN);
+						  char tmpString[20];
+						  sprintf(tmpString, "0x%x", addr);
+						  mutationSuffix = tmpString;
+						  mutationSuffix += "-jCC-CT";
 							mutated = true;
 						}
 					}
@@ -255,8 +329,8 @@ int main(int argc, char **argv){
   // }
 	if(!mutated) { cout <<"No mutations found\n"; return 1; }
   handle->finalizeInsertionSet(false);
-	char str[10];
-	sprintf(str, "%s-%u", binaryPath, (unsigned int)mutatedInsns.size());
+	char str[100];
+	sprintf(str, "%s-%s", binaryPath, mutationSuffix.c_str());
 	string outFile(str);
   printf("Writing new binary to \"%s\" ...\n", outFile.c_str());
   ((BPatch_binaryEdit*)handle)->writeFile(outFile.c_str());
