@@ -37,7 +37,6 @@ int main(int argc, char **argv){
     printf("Usage: %s <binary path> [function-name]\n", argv[0]);
     return -1;
   }
-	initMutationCheckpoint();
   char *binaryPath = argv[1];
 	char *functionName;
 	bool singleFunction = false;
@@ -49,10 +48,17 @@ int main(int argc, char **argv){
 		functionName = 0;
 		singleFunction = false; 
 	}
+  bool debug = false;
+	if(const char *envDebug = getenv("REPLACEINSN_DEBUG")) {
+	  if(string(envDebug) == "true" || string(envDebug) == "1") {
+		  debug = true;
+	  }
+	}
+	initMutationCheckpoint(debug);
 	BPatch_addressSpace *handle = startInstrumenting(binaryPath);
 	handle->beginInsertionSet();
 	PatchMgrPtr patchMgrPtr = PatchAPI::convert(handle);
-  bool debug = true;
+  
 	//PatchObject* obj = PatchAPI::convert(handle);
   
   // Find all functions in the object
@@ -66,7 +72,7 @@ int main(int argc, char **argv){
 		all.push_back(PatchAPI::convert((*all_BPatch_funcs)[i]));
     Function *f = ParseAPI::convert((*all_BPatch_funcs)[i]);
 		if(debug)
-		  cout<< " found function : "<<f->name()<<endl;
+		  cout<< "found function : "<<f->name()<<endl;
 		if(singleFunction)
 			if(f->name().find(functionName) == string::npos) continue; 
     
@@ -84,7 +90,7 @@ int main(int argc, char **argv){
           void *addr = (void*)((*j).first);
 					Instruction::Ptr iptr = (*j).second;
 					if(debug) {
-						cout<<" "<<iptr->format()<<endl;
+						cout<<"  "<<iptr->format()<<endl;
 					}
           int nbytes = iptr->size();
 #define MAX_RAW_INSN_SIZE 16
@@ -161,7 +167,7 @@ int main(int argc, char **argv){
 							condition = COND_TAKEN;
 							conditionString = "MOV";
 						}
-						buildReplacement(addr, &(*iptr), patchBlock, true, point, handler);
+						buildReplacement(addr, &(*iptr), patchBlock, debug, point, handler);
 					  checkpointMutation(addr, condition);
 						char tmpString[20];
 						sprintf(tmpString, "0x%x", addr);
@@ -206,7 +212,7 @@ int main(int argc, char **argv){
 							conditionString = "SET1";
 							cout<<"\n setting "<<dstReg.name()<<" to 1\n";
 						}
-						buildReplacement(addr, &(*iptr), patchBlock, true, point, handler);
+						buildReplacement(addr, &(*iptr), patchBlock, debug, point, handler);
 					  checkpointMutation(addr, condition);
 						char tmpString[20];
 						sprintf(tmpString, "0x%x", addr);
@@ -223,7 +229,11 @@ int main(int argc, char **argv){
 						vector<PatchEdge *> edges = patchBlock->targets();
 						assert(edges.size()==2);
 						if(edges[0]->type() == COND_NOT_TAKEN) {
-							PatchModifier::redirect(edges[0], edges[1]->trg());
+							bool redirectStatus = 
+								PatchModifier::redirect(edges[0], edges[1]->trg());
+							if(!redirectStatus) 
+								cout<<"failed to redirect edge\n";
+							else cout<<"redirect successful\n";
 							checkpointMutation(addr, COND_NOT_TAKEN);
 						  char tmpString[20];
 						  sprintf(tmpString, "0x%x", addr);
@@ -231,7 +241,11 @@ int main(int argc, char **argv){
 						  mutationSuffix += "-jCC-CNT";
 							mutated = true;
 						} else if(edges[1]->type() == COND_NOT_TAKEN) {
-							PatchModifier::redirect(edges[1], edges[0]->trg());
+							bool redirectStatus = 
+								PatchModifier::redirect(edges[1], edges[0]->trg());
+							if(!redirectStatus) 
+								cout<<"failed to redirect edge\n";
+							else cout<<"redirect successful\n";
 							checkpointMutation(addr, COND_NOT_TAKEN);
 						  char tmpString[20];
 						  sprintf(tmpString, "0x%x", addr);
@@ -248,7 +262,11 @@ int main(int argc, char **argv){
 						vector<PatchEdge *> edges = patchBlock->targets();
 						assert(edges.size()==2);
 						if(edges[0]->type() == COND_TAKEN) {
-							PatchModifier::redirect(edges[0], edges[1]->trg());
+							bool redirectStatus = 
+								PatchModifier::redirect(edges[0], edges[1]->trg());
+							if(!redirectStatus) 
+								cout<<"failed to redirect edge\n";
+							else cout<<"redirect successful\n";
 							checkpointMutation(addr, COND_TAKEN);
 						  char tmpString[20];
 						  sprintf(tmpString, "0x%x", addr);
@@ -256,7 +274,11 @@ int main(int argc, char **argv){
 						  mutationSuffix += "-jCC-CT";
 							mutated = true;
 						} else if(edges[1]->type() == COND_TAKEN) {
-							PatchModifier::redirect(edges[1], edges[0]->trg());
+							bool redirectStatus = 
+								PatchModifier::redirect(edges[1], edges[0]->trg());
+							if(!redirectStatus) 
+								cout<<"failed to redirect edge\n";
+							else cout<<"redirect successful\n";
 							checkpointMutation(addr, COND_TAKEN);
 						  char tmpString[20];
 						  sprintf(tmpString, "0x%x", addr);

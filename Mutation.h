@@ -8,7 +8,7 @@ using namespace Dyninst::ParseAPI;
 
 vector<pair<void *, EdgeTypeEnum> > mutatedInsns;
 
-void initMutationCheckpoint() {
+void initMutationCheckpoint(bool debug) {
 	ifstream fin("MutatedInsns.lst");
 	string s1, s2;
 	while(fin>>s1>>s2) {
@@ -17,13 +17,13 @@ void initMutationCheckpoint() {
 		sscanf(s1.c_str(), "%llx", &addr);
 		sscanf(s2.c_str(), "%u", &e);
 		//EdgeTypeEnum e = (EdgeTypeEnum) atoi(s2.c_str());
-		cout<<" s1 = "<<s1<<"("<<addr<<") s2 = "<<s2<<endl;
+		if(debug) cout<<"prev mutation: "<<s1<<"("<<s2<<")"<<endl;
 		pair<void *, EdgeTypeEnum> p ((void *)addr, (EdgeTypeEnum) e);
 		mutatedInsns.push_back(p);
 	}
-	for(int i=0; i<mutatedInsns.size(); i++) {
-		cout<<mutatedInsns[i].first<<" "<<mutatedInsns[i].second<<endl;
-	}
+	// for(int i=0; i<mutatedInsns.size(); i++) {
+	// 	cout<<mutatedInsns[i].first<<" "<<mutatedInsns[i].second<<endl;
+	// }
 }
 
 void checkpointMutation(void *addr, EdgeTypeEnum e) {
