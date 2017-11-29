@@ -34,7 +34,7 @@ BPatch_addressSpace *startInstrumenting(const char *name) {
 
 int main(int argc, char **argv){
   if(argc < 2){
-    printf("Usage: %s <binary path> [function-name]\n", argv[0]);
+    printf("Usage: %s <binary path> [function-name] [debug]\n", argv[0]);
     return -1;
   }
   char *binaryPath = argv[1];
@@ -49,10 +49,9 @@ int main(int argc, char **argv){
 		singleFunction = false; 
 	}
   bool debug = false;
-	if(const char *envDebug = getenv("REPLACEINSN_DEBUG")) {
-	  if(string(envDebug) == "true" || string(envDebug) == "1") {
-		  debug = true;
-	  }
+	if(argc > 3) {
+		if(strcmp(argv[3],"1") == 0 || strcmp(argv[3], "true") == 0)
+			debug = true;
 	}
 	initMutationCheckpoint(debug);
 	BPatch_addressSpace *handle = startInstrumenting(binaryPath);
@@ -125,7 +124,7 @@ int main(int argc, char **argv){
 						 (!mutatedBranch(addr, COND_NOT_TAKEN) ||
 							!mutatedBranch(addr, COND_TAKEN)) && 
 						 !mutated) {
-			    	cout<< "\nfound cmovCC: "<<iptr->format()<<endl;
+			    	cout<< "  found cmovCC: "<<iptr->format()<<endl;
 						PointMaker *pointMaker = patchMgrPtr->pointMaker();
 						Location loc = Location::InstructionInstance(
 								PatchAPI::convert((*all_BPatch_funcs)[i]),
@@ -137,7 +136,7 @@ int main(int argc, char **argv){
               handler = PatchAPI::convert(nop);
 							condition = COND_NOT_TAKEN;
 							conditionString = "NOP";
-							cout<<"\n replacing with nop\n";
+							cout<<"  replacing with nop\n";
 						} else if(!mutatedBranch(addr, COND_TAKEN)) {
 							MachRegister srcReg, dstReg;
               vector<Operand> operands;
@@ -156,12 +155,12 @@ int main(int argc, char **argv){
 							  srcReg = myVisitor->getRegUsed();
 		            BPatch_arithExpr *mov= new BPatch_arithExpr(BPatch_assign, *dst, *src);
                 handler = PatchAPI::convert(mov);
-							  cout<<"\n replacing with "<<dstReg.name() <<" = " << srcReg.name()<<endl;
+							  cout<<"  replacing with "<<dstReg.name() <<" = " << srcReg.name()<<endl;
 							} else { // source is immediate
 						    BPatch_constExpr *src = new BPatch_constExpr(myVisitor->getImmediateValue());
 		            BPatch_arithExpr *mov= new BPatch_arithExpr(BPatch_assign, *dst, *src);
                 handler = PatchAPI::convert(mov);
-							  cout<<"\n replacing with "<<dstReg.name() <<" = " 
+							  cout<<"  replacing with "<<dstReg.name() <<" = " 
 									<< myVisitor->getImmediateValue()<<endl;
 							}
 							condition = COND_TAKEN;
@@ -180,7 +179,7 @@ int main(int argc, char **argv){
 						 (!mutatedBranch(addr, COND_NOT_TAKEN) ||
 							!mutatedBranch(addr, COND_TAKEN)) && 
 						 !mutated) {
-			    	cout<< "\nfound setCC: "<<iptr->format()<<endl;
+			    	cout<< "  found setCC: "<<iptr->format()<<endl;
 						PointMaker *pointMaker = patchMgrPtr->pointMaker();
 						Location loc = Location::InstructionInstance(
 								PatchAPI::convert((*all_BPatch_funcs)[i]),
@@ -203,14 +202,14 @@ int main(int argc, char **argv){
               handler = PatchAPI::convert(mov);
 							condition = COND_NOT_TAKEN;
 							conditionString = "SET0";
-							cout<<"\n setting "<<dstReg.name()<<" to 0\n";
+							cout<<"  setting "<<dstReg.name()<<" to 0\n";
 						} else if(!mutatedBranch(addr, COND_TAKEN)) {
              BPatch_constExpr *setOne = new BPatch_constExpr(1);
 		          BPatch_arithExpr *mov= new BPatch_arithExpr(BPatch_assign, *dst, *setOne);
               handler = PatchAPI::convert(mov);
 							condition = COND_TAKEN;
 							conditionString = "SET1";
-							cout<<"\n setting "<<dstReg.name()<<" to 1\n";
+							cout<<"  setting "<<dstReg.name()<<" to 1\n";
 						}
 						buildReplacement(addr, &(*iptr), patchBlock, debug, point, handler);
 					  checkpointMutation(addr, condition);
@@ -225,15 +224,15 @@ int main(int argc, char **argv){
 							iptr->getOperation().getID() != e_jmp &&
 							!mutatedBranch(addr, COND_NOT_TAKEN) &&
 							!mutated) {
-						cout << "\nfound branch (COND_NOT_TAKEN) \n";
+						cout << "  found branch (COND_NOT_TAKEN) \n";
 						vector<PatchEdge *> edges = patchBlock->targets();
 						assert(edges.size()==2);
 						if(edges[0]->type() == COND_NOT_TAKEN) {
 							bool redirectStatus = 
 								PatchModifier::redirect(edges[0], edges[1]->trg());
 							if(!redirectStatus) 
-								cout<<"failed to redirect edge\n";
-							else cout<<"redirect successful\n";
+								cout<<"  failed to redirect edge\n";
+							else cout<<"  redirect successful\n";
 							checkpointMutation(addr, COND_NOT_TAKEN);
 						  char tmpString[20];
 						  sprintf(tmpString, "0x%x", addr);
@@ -244,8 +243,8 @@ int main(int argc, char **argv){
 							bool redirectStatus = 
 								PatchModifier::redirect(edges[1], edges[0]->trg());
 							if(!redirectStatus) 
-								cout<<"failed to redirect edge\n";
-							else cout<<"redirect successful\n";
+								cout<<"  failed to redirect edge\n";
+							else cout<<"  redirect successful\n";
 							checkpointMutation(addr, COND_NOT_TAKEN);
 						  char tmpString[20];
 						  sprintf(tmpString, "0x%x", addr);
@@ -258,15 +257,15 @@ int main(int argc, char **argv){
 							iptr->getOperation().getID() != e_jmp &&
 							!mutatedBranch(addr, COND_TAKEN) &&
 							!mutated) {
-						cout << "\nfound branch (COND_TAKEN) \n";
+						cout << "  found branch (COND_TAKEN) \n";
 						vector<PatchEdge *> edges = patchBlock->targets();
 						assert(edges.size()==2);
 						if(edges[0]->type() == COND_TAKEN) {
 							bool redirectStatus = 
 								PatchModifier::redirect(edges[0], edges[1]->trg());
 							if(!redirectStatus) 
-								cout<<"failed to redirect edge\n";
-							else cout<<"redirect successful\n";
+								cout<<"  failed to redirect edge\n";
+							else cout<<"  redirect successful\n";
 							checkpointMutation(addr, COND_TAKEN);
 						  char tmpString[20];
 						  sprintf(tmpString, "0x%x", addr);
@@ -277,8 +276,8 @@ int main(int argc, char **argv){
 							bool redirectStatus = 
 								PatchModifier::redirect(edges[1], edges[0]->trg());
 							if(!redirectStatus) 
-								cout<<"failed to redirect edge\n";
-							else cout<<"redirect successful\n";
+								cout<<"  failed to redirect edge\n";
+							else cout<<"  redirect successful\n";
 							checkpointMutation(addr, COND_TAKEN);
 						  char tmpString[20];
 						  sprintf(tmpString, "0x%x", addr);
