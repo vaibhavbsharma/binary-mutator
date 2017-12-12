@@ -1,6 +1,9 @@
 // c++ ReplaceInsn.cpp -g -o ReplaceInsn  -I /export/scratch/vaibhav/local/include -L /export/scratch/vaibhav/local/lib -ldyninstAPI -linstructionAPI -ldw -lelf -lpatchAPI -lsymtabAPI -std=c++0x -lparseAPI -lcommon  
 
 #include <iostream>
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #include "CodeObject.h"
 #include "InstructionDecoder.h"
 #include "PatchCFG.h"
@@ -53,7 +56,7 @@ int main(int argc, char **argv){
 		if(strcmp(argv[3],"1") == 0 || strcmp(argv[3], "true") == 0)
 			debug = true;
 	}
-	initMutationCheckpoint(debug);
+	initMutationCheckpoint(binaryPath, debug);
 	BPatch_addressSpace *handle = startInstrumenting(binaryPath);
 	handle->beginInsertionSet();
 	PatchMgrPtr patchMgrPtr = PatchAPI::convert(handle);
@@ -350,9 +353,14 @@ int main(int argc, char **argv){
   // }
 	if(!mutated) { cout <<"No mutations found\n"; return 1; }
   handle->finalizeInsertionSet(false);
-	char str[100];
-	sprintf(str, "%s-%s", binaryPath, mutationSuffix.c_str());
+
+	char str[500];
+	sprintf(str, "%s-mutants/%s", binaryPath, mutationSuffix.c_str());
 	string outFile(str);
+
+  sprintf(str, "%s-mutants", binaryPath);
+  mkdir(str, S_IRWXU);
+
   printf("Writing new binary to \"%s\" ...\n", outFile.c_str());
   ((BPatch_binaryEdit*)handle)->writeFile(outFile.c_str());
   printf("Done.\n");
