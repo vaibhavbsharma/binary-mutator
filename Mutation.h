@@ -8,8 +8,11 @@ using namespace Dyninst::ParseAPI;
 
 vector<pair<void *, EdgeTypeEnum> > mutatedInsns;
 
-void initMutationCheckpoint(bool debug) {
-	ifstream fin("MutatedInsns.lst");
+char checkpointPath[500];
+
+void initMutationCheckpoint(char* binaryPath, bool debug) {
+  sprintf(checkpointPath, "%s-MutatedInsns.lst", binaryPath);
+	ifstream fin(checkpointPath);
 	string s1, s2;
 	while(fin>>s1>>s2) {
 		unsigned long long int addr;
@@ -27,7 +30,7 @@ void initMutationCheckpoint(bool debug) {
 }
 
 void checkpointMutation(void *addr, EdgeTypeEnum e) {
-	ofstream fout("MutatedInsns.lst", ios_base::app);
+	ofstream fout(checkpointPath, ios_base::app);
 	fout<<addr<<" " <<e<<endl;
 	fout.close();
 }
