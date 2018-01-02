@@ -17,7 +17,7 @@ int testfn(int x) {
     myprintf("Hello World!\n");
     int a = 1;
 		a = x;
-		x = x < 3 ? 3 : x;
+		//x = x < 3 ? 3 : x;
 		if( (a + x) < 3)
       myprintf("ITE effect was lost OR x >= 3\n");
 		else myprintf("ITE effect present\n");

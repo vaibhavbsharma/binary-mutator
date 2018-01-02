@@ -1,7 +1,6 @@
 // c++ ReplaceInsn.cpp -g -o ReplaceInsn  -I /export/scratch/vaibhav/local/include -L /export/scratch/vaibhav/local/lib -ldyninstAPI -linstructionAPI -ldw -lelf -lpatchAPI -lsymtabAPI -std=c++0x -lparseAPI -lcommon  
 
 #include <iostream>
-#include "CodeObject.h"
 #include "InstructionDecoder.h"
 #include "PatchCFG.h"
 #include "PatchObject.h"
@@ -232,7 +231,7 @@ int main(int argc, char **argv){
 								PatchModifier::redirect(edges[0], edges[1]->trg());
 							if(!redirectStatus) 
 								cout<<"  failed to redirect edge\n";
-							else cout<<"  redirect successful\n";
+							else cout<<"  redirect successful (1)\n";
 							checkpointMutation(addr, COND_NOT_TAKEN);
 						  char tmpString[20];
 						  sprintf(tmpString, "0x%x", addr);
@@ -244,7 +243,7 @@ int main(int argc, char **argv){
 								PatchModifier::redirect(edges[1], edges[0]->trg());
 							if(!redirectStatus) 
 								cout<<"  failed to redirect edge\n";
-							else cout<<"  redirect successful\n";
+							else cout<<"  redirect successful (2)\n";
 							checkpointMutation(addr, COND_NOT_TAKEN);
 						  char tmpString[20];
 						  sprintf(tmpString, "0x%x", addr);
@@ -265,7 +264,7 @@ int main(int argc, char **argv){
 								PatchModifier::redirect(edges[0], edges[1]->trg());
 							if(!redirectStatus) 
 								cout<<"  failed to redirect edge\n";
-							else cout<<"  redirect successful\n";
+							else cout<<"  redirect successful (1)\n";
 							checkpointMutation(addr, COND_TAKEN);
 						  char tmpString[20];
 						  sprintf(tmpString, "0x%x", addr);
@@ -277,7 +276,7 @@ int main(int argc, char **argv){
 								PatchModifier::redirect(edges[1], edges[0]->trg());
 							if(!redirectStatus) 
 								cout<<"  failed to redirect edge\n";
-							else cout<<"  redirect successful\n";
+							else cout<<"  redirect successful (2)\n";
 							checkpointMutation(addr, COND_TAKEN);
 						  char tmpString[20];
 						  sprintf(tmpString, "0x%x", addr);

@@ -14,3 +14,5 @@ This will create new binary files for every flag-use instruction in function1 in
 I ran the tool on the "cruise-o3" binary in the component-based-assurance repository and it generated 483 mutants. I've also manually verified mutants generated for a few jCC, setCC, cmovCC instructions and found them to be correct.
 
 Please note that make-mutants.pl runs a binary named ReplaceInsn which requires dyninst to be installed and dyninst installation paths updated in the Makefile (which is quite basic for now). I have checked in my current version of ReplaceInsn for you to have something to run now.
+
+In order to compile ReplaceInsn, you will need to specify the directory in which your dyninst copy was installed in the DYNINST_INSTALL_ROOT variable in the Makefile.
