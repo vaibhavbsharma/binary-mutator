@@ -11,6 +11,30 @@ How to run
 
 4.  Finally, run `./show-segfault-cases.sh` to see what's wrong.
 
+Test cases
+==========
+
+> updated at 3pm on 1/20 by TJ
+
+Test case 1
+-----------
+
+`Microwave` compiled with `GCC`.
+Fixed on 1/20/18.
+
+Test case 2
+-----------
+
+`Infusion Pump` compiled with `GCC`.
+[The failing cases are listed here](infusion-gcc-failures.txt).
+
+Test case 3
+-----------
+
+`Microwave` compiled with `Clang`.
+[The failing cases are listed here](microwave-clang-failures.txt).
+
+
 What you'd see
 ==============
 
