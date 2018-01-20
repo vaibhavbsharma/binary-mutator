@@ -144,27 +144,44 @@ int main(int argc, char **argv){
 							MachRegister srcReg, dstReg;
               vector<Operand> operands;
 			        iptr->getOperands(operands);
-			        MyVisitor *myVisitor = new MyVisitor();
-			        Expression::Ptr ePtr = operands[0].getValue();
+			        MyVisitor *myVisitor = new MyVisitor(debug);
+			        Expression::Ptr ePtr = operands[1].getValue();
 			        ePtr->apply(myVisitor);
-						  BPatch_registerExpr *dst = new BPatch_registerExpr(myVisitor->getRegUsed());
-							dstReg = myVisitor->getRegUsed();
-							myVisitor = new MyVisitor();
-              ePtr = operands[1].getValue();
+							BPatch_snippet *dst = NULL;
+							if(myVisitor->isRegister)
+								dst = new BPatch_registerExpr(myVisitor->getRegUsed());
+							else if(myVisitor->isDereference) {
+								set<BPatch_opCode> axs;
+								axs.insert(BPatch_opStore);
+								axs.insert(BPatch_opLoad);
+								vector<BPatch_point *> *points = (*all_BPatch_funcs)[i]->findPoint(axs);
+								for(int poi = 0; poi < points->size(); poi++) {
+									BPatch_point *thisPoint = (*points)[poi];
+									if (thisPoint->getAddress() == addr) {
+										if (debug) cout<<"\t  found point with address "<<addr<<endl;
+										point = PatchAPI::convert(thisPoint, BPatch_callBefore);
+									}
+								}
+								BPatch_snippet *eae = new BPatch_effectiveAddressExpr(); 
+								dst = eae;
+							}
+							//dstReg = myVisitor->getRegUsed();
+							myVisitor = new MyVisitor(debug);
+              ePtr = operands[0].getValue();
 			        ePtr->apply(myVisitor);
 							// if source is register
-							if(myVisitor->getRegUsed() != Dyninst::x86_64::rip) {
+							if(myVisitor->isRegister) {
 						    BPatch_registerExpr *src = new BPatch_registerExpr(myVisitor->getRegUsed());
 							  srcReg = myVisitor->getRegUsed();
 		            BPatch_arithExpr *mov= new BPatch_arithExpr(BPatch_assign, *dst, *src);
                 handler = PatchAPI::convert(mov);
-							  cout<<"  replacing with "<<dstReg.name() <<" = " << srcReg.name()<<endl;
+							  //cout<<"  replacing with "<<dstReg.name() <<" = " << srcReg.name()<<endl;
 							} else { // source is immediate
 						    BPatch_constExpr *src = new BPatch_constExpr(myVisitor->getImmediateValue());
 		            BPatch_arithExpr *mov= new BPatch_arithExpr(BPatch_assign, *dst, *src);
                 handler = PatchAPI::convert(mov);
-							  cout<<"  replacing with "<<dstReg.name() <<" = " 
-									<< myVisitor->getImmediateValue()<<endl;
+							  //cout<<"  replacing with "<<dstReg.name() <<" = " 
+									//<< myVisitor->getImmediateValue()<<endl;
 							}
 							condition = COND_TAKEN;
 							conditionString = "MOV";
@@ -193,11 +210,28 @@ int main(int argc, char **argv){
             MachRegister srcReg, dstReg;
             vector<Operand> operands;
 			      iptr->getOperands(operands);
-			      MyVisitor *myVisitor = new MyVisitor();
+			      MyVisitor *myVisitor = new MyVisitor(debug);
 			      Expression::Ptr ePtr = operands[0].getValue();
 			      ePtr->apply(myVisitor);
-						BPatch_registerExpr *dst = new BPatch_registerExpr(myVisitor->getRegUsed());
-						dstReg = myVisitor->getRegUsed();
+						BPatch_snippet *dst = NULL;
+						if(myVisitor->isRegister)
+							dst = new BPatch_registerExpr(myVisitor->getRegUsed());
+						else if(myVisitor->isDereference) {
+							set<BPatch_opCode> axs;
+							axs.insert(BPatch_opStore);
+							vector<BPatch_point *> *points = (*all_BPatch_funcs)[i]->findPoint(axs);
+							for(int poi = 0; poi < points->size(); poi++) {
+								BPatch_point *thisPoint = (*points)[poi];
+								if (thisPoint->getAddress() == addr) {
+									if (debug) cout<<"\t  found point with address "<<addr<<endl;
+									point = PatchAPI::convert(thisPoint, BPatch_callBefore);
+								}
+							}
+							BPatch_snippet *eae = new BPatch_effectiveAddressExpr(); 
+							//dst = new BPatch_arithExpr(BPatch_deref, *eae);
+							dst = eae;
+						}
+						//dstReg = myVisitor->getRegUsed();
 
 						if(!mutatedBranch(addr, COND_NOT_TAKEN)) {
 						  BPatch_constExpr *setZero = new BPatch_constExpr(0);
@@ -205,14 +239,14 @@ int main(int argc, char **argv){
               handler = PatchAPI::convert(mov);
 							condition = COND_NOT_TAKEN;
 							conditionString = "SET0";
-							cout<<"  setting "<<dstReg.name()<<" to 0\n";
+							//cout<<"  setting "<<dstReg.name()<<" to 0\n";
 						} else if(!mutatedBranch(addr, COND_TAKEN)) {
              BPatch_constExpr *setOne = new BPatch_constExpr(1);
 		          BPatch_arithExpr *mov= new BPatch_arithExpr(BPatch_assign, *dst, *setOne);
               handler = PatchAPI::convert(mov);
 							condition = COND_TAKEN;
 							conditionString = "SET1";
-							cout<<"  setting "<<dstReg.name()<<" to 1\n";
+							//cout<<"  setting "<<dstReg.name()<<" to 1\n";
 						}
 						buildReplacement(addr, &(*iptr), patchBlock, debug, point, handler);
 					  checkpointMutation(addr, condition);
