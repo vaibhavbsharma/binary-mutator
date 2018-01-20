@@ -1,0 +1,7 @@
+ALARM_IN_Highest_Level_Alarm,CONFIG_IN_Configured,CONFIG_IN_Duration_Total,CONFIG_IN_Flow_Rate_Basal,CONFIG_IN_Flow_Rate_Intermittent_Bolus,CONFIG_IN_Flow_Rate_KVO,CONFIG_IN_Flow_Rate_Patient_Bolus,CONFIG_IN_Intermittent_Bolus_Duration,CONFIG_IN_Interval_Intermittent_Bolus,CONFIG_IN_Lock_Out_Duration,CONFIG_IN_Max_Patient_Bolus,CONFIG_IN_Patient_Bolus_Duration,CONFIG_IN_VTBI_Total,OP_CMD_IN_Infusion_Cancel,OP_CMD_IN_Infusion_Inhibit,OP_CMD_IN_Infusion_Initiate,PATIENT_IN_Bolus_Request,SYS_STAT_IN_Reservoir_Empty,SYS_STAT_Volume_Infused,TLM_MODE_IN_On_Start
+-324,-344,-462,47,367,86,974,-648,800,-60,181,229,-10,true,false,true,false,false,-866,true
+292,-955,720,534,657,-287,892,-628,-768,-541,-340,-689,-860,true,false,true,true,false,-658,false
+-14,-664,301,967,-974,-147,365,993,-788,-502,833,-633,-701,true,false,true,true,true,-738,false
+58,539,-769,287,-195,-711,690,268,-191,-686,-933,-805,-396,false,false,false,false,true,318,false
+15,-169,989,804,-710,362,89,-453,476,-26,-471,40,-68,false,true,true,true,true,-506,false
+815,16,565,-403,821,-693,263,320,415,257,-954,679,328,false,false,true,false,false,-684,true

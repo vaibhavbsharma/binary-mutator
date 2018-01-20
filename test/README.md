@@ -1,7 +1,8 @@
 How to run
 ==========
 
-1.  Run `$ ./run_test.sh`
+1.  Run `$ ./run_test.sh`. Run `$ ./run_test.sh 1` to run the first test case,
+    Run `$./run_test.sh 2` to run the second test case.
 
 2.  A bunch of output will be produced initially from the binary mutator.
 

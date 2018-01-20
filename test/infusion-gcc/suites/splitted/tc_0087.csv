@@ -1,0 +1,17 @@
+ALARM_IN_Highest_Level_Alarm,CONFIG_IN_Configured,CONFIG_IN_Duration_Total,CONFIG_IN_Flow_Rate_Basal,CONFIG_IN_Flow_Rate_Intermittent_Bolus,CONFIG_IN_Flow_Rate_KVO,CONFIG_IN_Flow_Rate_Patient_Bolus,CONFIG_IN_Intermittent_Bolus_Duration,CONFIG_IN_Interval_Intermittent_Bolus,CONFIG_IN_Lock_Out_Duration,CONFIG_IN_Max_Patient_Bolus,CONFIG_IN_Patient_Bolus_Duration,CONFIG_IN_VTBI_Total,OP_CMD_IN_Infusion_Cancel,OP_CMD_IN_Infusion_Inhibit,OP_CMD_IN_Infusion_Initiate,PATIENT_IN_Bolus_Request,SYS_STAT_IN_Reservoir_Empty,SYS_STAT_Volume_Infused,TLM_MODE_IN_On_Start
+-966,-130,-31,578,-397,-462,655,822,731,281,972,-643,-767,false,false,false,false,false,-59,false
+746,927,-803,440,-264,773,-453,-849,-331,-255,800,-370,-579,true,false,true,false,true,993,false
+-865,983,157,637,-684,-181,-6,664,847,-543,934,-750,-270,true,false,true,true,true,-881,false
+34,350,-227,-781,-10,-47,618,-688,-496,-78,-946,393,30,true,false,true,true,false,450,true
+205,427,518,402,-340,-398,-351,401,513,711,396,-492,26,false,false,true,true,false,395,false
+-647,933,347,208,-229,-730,93,170,23,-100,-133,-956,465,false,true,false,true,false,591,true
+406,-418,536,307,-529,674,-952,-295,372,491,-233,-523,-130,true,false,false,true,true,119,false
+-885,536,-439,964,-53,702,467,538,-660,815,812,560,-995,false,false,true,false,true,-403,false
+869,222,-202,939,911,73,387,982,-81,-715,280,-840,-1,true,true,true,true,false,426,false
+786,-588,110,477,403,-658,-385,-560,-270,-111,537,986,911,false,true,true,true,false,109,true
+-255,-954,-356,-29,60,345,407,697,-483,-146,-108,154,950,true,true,true,true,true,-324,true
+-750,500,-509,-686,-707,-159,319,-955,563,597,978,502,-225,true,true,true,false,true,-683,false
+161,183,955,66,648,-730,-351,126,155,-435,-836,-716,344,true,false,false,true,false,515,true
+-4,-54,-609,-136,-79,211,290,-720,-630,-971,-474,199,-387,true,false,true,true,false,-227,false
+-596,656,-69,-841,-202,-916,146,691,126,-936,-260,875,696,false,false,false,true,false,-846,false
+453,-267,524,-918,-947,-282,-195,108,368,-609,-849,91,-157,true,true,true,false,true,827,false
