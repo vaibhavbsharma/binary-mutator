@@ -8,9 +8,9 @@ function init_test() {
     || { echo "Make first."; exit; }
   cp ../make-mutants.pl .
   cp ../ReplaceInsn .
-  for d in ${OUTD[@]}; do
-    rm -r $d/bin
-    rm -r $d/bintraces
+  for dir in ${OUTDS[@]}; do
+    rm -r $dir/bin
+    rm -r $dir/bintraces
   done
   # set up a new configuration file
   cp $CONFIG_ORIGINAL $CONFIG

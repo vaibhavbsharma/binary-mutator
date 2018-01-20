@@ -3630,9 +3630,6 @@ int main(int argc, char** argv){
       current_step = current_step->next;
       n_steps++;
     }
-#if DEBUG
-    printf("TC #%d, %d steps\n", n_test_cases, n_steps);
-#endif
     /* finished: consumed all the steps of the current test case */
     //dump_state(fp_dump, NULL);          // dump a blank line
     memset(&ctx, 0, sizeof(top_ctx));    // init the state variables
@@ -3642,7 +3639,6 @@ int main(int argc, char** argv){
   }
   if (NULL != fp_dump)
   fclose(fp_dump);
-  printf("No.of test cases completed:%lu\n", n_test_cases);
 
   return 0;
 }
