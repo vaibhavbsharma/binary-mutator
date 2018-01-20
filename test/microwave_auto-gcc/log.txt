@@ -1,0 +1,58 @@
+
+[0;35m[runObcExperiment][0m Started at: [0;32m2018-01-1910:10:00CST[0m
+
+[0;35m[runObcExperiment][0m Configuration:
+  COMPILER: [0;32mgcc[0m 
+  COVERAGE_CRITERIA: [0;32mmcdc,obc,oobc,all[0m 
+  ORACLE_KIND: [0;32moutput[0m 
+  OBC_TYPES: [0;32mJ,JSMB[0m 
+  N_MUTANTS: [0;32m250[0m 
+  N_TEST_SUITES: [0;32m40[0m 
+  
+  IS_UNIVERSAL_SUITE: [0;32mtrue[0m 
+  IS_GENERATE_TESTS: [0;32mfalse[0m 
+  IS_GENERATE_MUTANTS: [0;32mfalse[0m 
+  IS_CHECK_EQUIVALENCE: [0;32mfalse[0m 
+  IS_MEASURE_OBC: [0;32mtrue[0m 
+  IS_GENERATE_TRACE: [0;32mtrue[0m 
+  
+  MAX_CORES: [0;32m4[0m 
+  JVM_MEM: [0;32m16384m[0m 
+  MC_TIMEOUT: [0;32m30[0m 
+  IS_DEBUG: [0;32mfalse[0m 
+
+
+[0;35m[runObcExperiment][0m Clearing [0;32m../exp250-in/microwave_auto[0m and [0;32m../exp250-out/microwave_auto-gcc/[0m
+
+[0;35m[runObcExperiment][0m [0;34m./generateTests[0m ../exp250-in/microwave_auto ../exp250-out/microwave_auto-gcc/ 
+[0;35m[generateTests][0m [0;34mSkipping test generation[0m
+
+[0;35m[runObcExperiment][0m [0;34m./generateUnivSuite[0m ../exp250-in/microwave_auto ../exp250-out/microwave_auto-gcc/
+[0;35m[generateUnivSuite][0m[0;34m Number of test cases before merge:[0;32m 1410 [0m
+[UniversalSuite.py] Merging 4 suites
+[UniversalSuite.py] Writing merged suite to /home/taejoon/git/cba/coverage/exp250-out/microwave_auto-gcc/suites/mw_auto.obc_tests.csv
+[UniversalSuite.py] Splitting tests to /home/taejoon/git/cba/coverage/exp250-out/microwave_auto-gcc/suites//splitted
+[0;35m[generateUnivSuite][0m[0;34m Merged to[0;32m 267 [0;34mtest cases; saved them to[0m ../exp250-out/microwave_auto-gcc/suites/mw_auto.obc_tests.csv
+
+[0;35m[runObcExperiment][0m [0;34m./generateCovMatrix[0m ../exp250-in/microwave_auto ../exp250-out/microwave_auto-gcc/ 
+[0;35m[generateCovMatrix][0m coverage [0;32mmcdc[0m
+[0;35m[generateCovMatrix][0m Writing oracle listing to ../exp250-in/microwave_auto/obligations/mw_auto.mcdc_obligations.lus.oracle.csv
+[0;35m[generateCovMatrix][0m Generating traces for suite [0;32mmw_auto.mcdc_tests.csv[0m
+	mv trace_file ../exp250-out/microwave_auto-gcc/traces/mw_auto.mcdc_tests.csv/obligationCoverage/mw_auto.mcdc_obligations_trace.csv
+[0;35m[generateCovMatrix][0m generating coverage matrix to /home/taejoon/git/cba/coverage/exp250-in/microwave_auto/obligations/mw_auto.mcdc_obligations_coverage.csv
+
+[0;35m[runObcExperiment][0m [0;34m./measureObc[0m  
+[0;35m[measureObc][0m [0;34mCopying sources from
+gcc /home/taejoon/git/cba/coverage/exp250-out/microwave_auto-gcc/bin/mw_auto.c -DDEBUG=0 -w -std=c11 -fno-inline -o o0 -O0
+touch makefile
+gcc /home/taejoon/git/cba/coverage/exp250-out/microwave_auto-gcc/bin/mw_auto.c -DDEBUG=0 -w -std=c11 -fno-inline -o o1 -O1
+touch makefile
+gcc /home/taejoon/git/cba/coverage/exp250-out/microwave_auto-gcc/bin/mw_auto.c -DDEBUG=0 -w -std=c11 -fno-inline -o o2 -O2
+touch makefile
+gcc /home/taejoon/git/cba/coverage/exp250-out/microwave_auto-gcc/bin/mw_auto.c -DDEBUG=0 -w -std=c11 -fno-inline -o o3 -O3
+touch makefile
+gcc /home/taejoon/git/cba/coverage/exp250-out/microwave_auto-gcc/bin/mw_auto.c -DDEBUG=0 -w -std=c11 -fno-inline -o os -Os
+touch makefile
+/home/taejoon/git/cba/coverage/exp250-out/microwave_auto-gcc/cov/obc/o0
+[0;35m[measureObc][0m[0;34m Running[0;32m 267 [0;34mtest cases on[0;32m o0 [0;34m... [0m
+	Completed [0;32m 11[0m out of [0;32m267[0m	Completed [0;32m 11[0m out of [0;32m267[0m	Completed [0;32m 11[0m out of [0;32m267[0m	Completed [0;32m 11[0m out of [0;32m267[0m	Completed [0;32m 11[0m out of [0;32m267[0m	Completed [0;32m 11[0m out of [0;32m267[0m	Completed [0;32m 11[0m out of [0;32m267[0m	Completed [0;32m 12[0m out of [0;32m267[0m	Completed [0;32m 12[0m out of [0;32m267[0m	Completed [0;32m 14[0m out of [0;32m267[0m	Completed [0;32m 16[0m out of [0;32m267[0m	Completed [0;32m 17[0m out of [0;32m267[0m	Completed [0;32m 22[0m out of [0;32m267[0m	Completed [0;32m 22[0m out of [0;32m267[0m	Completed [0;32m 22[0m out of [0;32m267[0m	Completed [0;32m 22[0m out of [0;32m267[0m	Completed [0;32m 22[0m out of [0;32m267[0m	Completed [0;32m 22[0m out of [0;32m267[0m	Completed [0;32m 27[0m out of [0;32m267[0m	Completed [0;32m 30[0m out of [0;32m267[0m	Completed [0;32m 33[0m out of [0;32m267[0m	Completed [0;32m 33[0m out of [0;32m267[0m	Completed [0;32m 33[0m out of [0;32m267[0m	Completed [0;32m 34[0m out of [0;32m267[0m	Completed [0;32m 34[0m out of [0;32m267[0m	Completed [0;32m 38[0m out of [0;32m267[0m	Completed [0;32m 40[0m out of [0;32m267[0m	Completed [0;32m 42[0m out of [0;32m267[0m	Completed [0;32m 44[0m out of [0;32m267[0m	Completed [0;32m 44[0m out of [0;32m267[0m	Completed [0;32m 44[0m out of [0;32m267[0m	Completed [0;32m 44[0m out of [0;32m267[0m	Completed [0;32m 44[0m out of [0;32m267[0m	Completed [0;32m 46[0m out of [0;32m267[0m	Completed [0;32m 47[0m out of [0;32m267[0m	Completed [0;32m 48[0m out of [0;32m267[0m

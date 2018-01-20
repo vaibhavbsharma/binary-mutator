@@ -1,0 +1,5 @@
+DOOR_CLOSED,KP_0,KP_1,KP_2,KP_3,KP_4,KP_5,KP_6,KP_7,KP_8,KP_9,KP_CLEAR,KP_START
+true,false,true,true,true,true,true,false,false,false,false,false,false
+false,false,false,false,false,false,false,false,false,false,false,false,true
+true,false,false,false,false,false,false,false,false,false,false,true,false
+true,false,false,false,false,false,false,false,true,false,false,false,false
