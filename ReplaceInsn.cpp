@@ -145,7 +145,7 @@ int main(int argc, char **argv){
               vector<Operand> operands;
 			        iptr->getOperands(operands);
 			        MyVisitor *myVisitor = new MyVisitor(debug);
-			        Expression::Ptr ePtr = operands[1].getValue();
+			        Expression::Ptr ePtr = operands[0].getValue();
 			        ePtr->apply(myVisitor);
 							BPatch_snippet *dst = NULL;
 							if(myVisitor->isRegister)
@@ -167,7 +167,7 @@ int main(int argc, char **argv){
 							}
 							//dstReg = myVisitor->getRegUsed();
 							myVisitor = new MyVisitor(debug);
-              ePtr = operands[0].getValue();
+              ePtr = operands[1].getValue();
 			        ePtr->apply(myVisitor);
 							// if source is register
 							if(myVisitor->isRegister) {
