@@ -29,7 +29,7 @@ function generate_binary_mutants() {
   local bin=$1; local bindir=$(get_bin_dir)
   for func in $(cat $(get_flist)); do
     #echo -e "$HEADER$BLUE $BINARY_MUTATOR $GREEN$(relpath $bindir/$bin) $func$ENDL"
-    $BINARY_MUTATOR $bindir/$bin $func
+    $BINARY_MUTATOR $bindir/$bin $func > /dev/null
     cp $bindir/$bin $bindir/$bin-mutants/$bin-correct
   done
 }
@@ -43,7 +43,7 @@ for bin in $(get_binaries); do
     continue
   fi
   echo -e "$HEADER$BLUE Generating binary mutants for$GREEN $bin$ENDL"
-  generate_binary_mutants $bin
+  generate_binary_mutants $bin &
 done
 wait
 
@@ -65,8 +65,9 @@ function run_master_suite_on_mutants() {
   #echo -e "$HEADER$GREEN $bin $mut$ENDL"
   for tc in $(get_splitted_test_cases); do
     trace=$(get_bintrace $bin $mut $tc)
-    echo -e "\t$mut $(basename $tc) $(basename $trace)"
     ./$mut $tc $trace
+    # print the info if the size of $trace was 0
+    [ -f $trace -a -s $trace ] || echo -e "\t$mut $(basename $tc) $(basename $trace)"
     #else
     #  { ./$mut $tc $trace > /dev/null;
     #    #[ $? -eq 139 ] && echo "segfault @ $mut `basename $tc` ";
@@ -80,9 +81,10 @@ function generate_traces() {
     cd $(get_binary_mutants_dir $binary)
     i=0; cnt=$(echo $(get_binary_mutants $binary) | wc -w)
     echo -e "$HEADER$BLUE Running$GREEN $cnt ${BLUE}mutants of$GREEN $binary$ENDL"
+    echo -e "$HEADER The following cases are likely to be faulty"
     for mutant in $(get_binary_mutants $binary); do
       run_master_suite_on_mutants $binary $mutant &
-      i=$((i+1)) #; print_parallel_progress $i $cnt "mutants"
+      i=$((i+1)) ; print_parallel_progress $i $cnt "mutants"
     done
     wait
     printf "\n"

@@ -15,7 +15,7 @@ define dump
 	touch makefile
 endef
 
-all: o2 o3
+all: os
 
 o0: $(SRC)
 	$(CC) $(SRC) $(CFLAGS) -o o0 -O0

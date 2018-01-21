@@ -28,7 +28,7 @@ LUSTRE_MODEL=$INDIR/`ls $INDIR | grep "lus" | grep -v "obligations"`
 BASENAME=`basename $LUSTRE_MODEL .lus`
 IS_CLEAR_OUTDIR=$IS_MEASURE_OBC && $IS_GENERATE_TRACE
 MASTER_SUITE_DIR=$OUTDIR/suite/splitted
-MAX_PARALLEL=$MAX_CORES
+MAX_PARALLEL=$MAX_CORES*3
 
 HEADER="$PURPLE[config.sh]$ENDL"
 
@@ -389,7 +389,7 @@ function print_parallel_progress() {
   current=$1; total=$2; what=$3
   [ "$#" -ne 3 ] && { exception "print_progress()" "Illegal #args"; exit 1; }
   while [ `jobs | wc -l` -gt $MAX_PARALLEL ]; do
-    printf "\r\tCompleted $GREEN%3d$ENDL out of $GREEN%3d$ENDL %s" $current $total $what
+    #printf "\r\tCompleted $GREEN%3d$ENDL out of $GREEN%3d$ENDL %s" $current $total $what
     sleep 0.2
   done
 }
