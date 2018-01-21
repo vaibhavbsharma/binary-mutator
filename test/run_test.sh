@@ -1,5 +1,5 @@
-INDS=("./microwave_auto" "./infusion")
-OUTDS=("./microwave_auto-gcc" "./infusion-gcc")
+OUTDS=("./microwave_auto-gcc" "./infusion-gcc" "./microwave_auto-clang")
+COMPILED_OUTDS=("./microwave_auto-clang2")
 CONFIG_ORIGINAL="exp_config_original.sh"
 CONFIG="experiment_config.sh"
 
@@ -9,8 +9,11 @@ function init_test() {
   cp ../make-mutants.pl .
   cp ../ReplaceInsn .
   for dir in ${OUTDS[@]}; do
-    rm -r $dir/bin
-    rm -r $dir/bintraces
+    rm -r $dir/bin 2> /dev/null
+    rm -r $dir/bintraces 2> /dev/null
+  done
+  for dir in ${COMPILED_OUTDS[@]}; do
+    rm -r $dir/bintraces 2> /dev/null
   done
   # set up a new configuration file
   cp $CONFIG_ORIGINAL $CONFIG
@@ -29,16 +32,22 @@ function testcase2() {
 }
 
 function testcase3() {
-  # test 3: microwave - gcc
+  # test 3: microwave - clang
   echo "COMPILER=clang" >> $CONFIG
   ./measureOobc ./microwave_auto ./microwave_auto-clang #2> error.log
 }
 
+function testcase4() {
+  # test 4: microwave - clang with bin mutants generated from TJ's machine
+  echo "COMPILER=clang" >> $CONFIG
+  ./measureOobc ./microwave_auto ./microwave_auto-clang2 #2> error.log
+}
+
 if [ "$1" == "init" ]; then
   init_test
+  echo "Initialized."
   exit
-elif [ $1 -ge 1 -a $1 -le 3 ]; then
-  init_test
+elif [ $1 -ge 1 -a $1 -le 4 ]; then
   testcase${1}
 else
   echo "Usage: $./run_test.sh {init, 1, 2}"

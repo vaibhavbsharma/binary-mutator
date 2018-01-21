@@ -47,17 +47,6 @@ for bin in $(get_binaries); do
 done
 wait
 
-function is_bintraces_generated() {
-  local TRUE=0; local FALSE=1;
-  [ -d "$(get_bintrace_dir)" ] || return $FALSE
-  for bin in $(get_binaries); do
-    dir=$(get_bintrace_dir $bin)
-    [ -d $dir ] || return $FALSE
-    [ $(ls $(get_bintrace_dir $bin) | wc -w) -gt 0 ] || return $FALSE
-  done
-  return $TRUE
-}
-
 function run_master_suite_on_mutants() {
   [ "$#" -ne 2 ] && { \
     exception $HEADER"::run_master_suite_on_mutants" "Invalid #args"; exit 1; }
@@ -67,7 +56,7 @@ function run_master_suite_on_mutants() {
     trace=$(get_bintrace $bin $mut $tc)
     ./$mut $tc $trace
     # print the info if the size of $trace was 0
-    [ -f $trace -a -s $trace ] || echo -e "\t$mut $(basename $tc) $(basename $trace)"
+    [ -f $trace -a -s $trace ] || echo -e "\t$bin\t$mut\t$(basename $tc)\t$(basename $trace)"
     #else
     #  { ./$mut $tc $trace > /dev/null;
     #    #[ $? -eq 139 ] && echo "segfault @ $mut `basename $tc` ";
@@ -91,11 +80,7 @@ function generate_traces() {
   done
 }
 
-if is_bintraces_generated; then
-  echo -e "$HEADER$BLUE Binary traces are already generated$ENDL"
-else
-  generate_traces
-fi
+generate_traces
 
 cd $TOOL_ROOT
 exit

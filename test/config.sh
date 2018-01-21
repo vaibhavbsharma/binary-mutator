@@ -390,7 +390,7 @@ function print_parallel_progress() {
   [ "$#" -ne 3 ] && { exception "print_progress()" "Illegal #args"; exit 1; }
   while [ `jobs | wc -l` -gt $MAX_PARALLEL ]; do
     #printf "\r\tCompleted $GREEN%3d$ENDL out of $GREEN%3d$ENDL %s" $current $total $what
-    sleep 0.2
+    sleep 0.1
   done
 }
 

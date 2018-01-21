@@ -1,0 +1,8 @@
+top_step
+left_digit,ctx,64,4
+middle_digit,ctx,88,4
+right_digit,ctx,92,4
+enabled,ctx,60,4
+setup,ctx,68,4
+cooking,ctx,72,4
+suspended,ctx,76,4
