@@ -56,7 +56,7 @@ function run_master_suite_on_mutants() {
     trace=$(get_bintrace $bin $mut $tc)
     ./$mut $tc $trace
     # print the info if the size of $trace was 0
-    [ -f $trace -a -s $trace ] || echo -e "\t$bin\t$mut\t$(basename $tc)\t$(basename $trace)"
+    [ -f $trace -a -s $trace ] || echo -e "$(readlink -f $mut) $tc $trace"
     #else
     #  { ./$mut $tc $trace > /dev/null;
     #    #[ $? -eq 139 ] && echo "segfault @ $mut `basename $tc` ";

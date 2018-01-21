@@ -8,11 +8,11 @@ function init_test() {
     || { echo "Make first."; exit; }
   cp ../make-mutants.pl .
   cp ../ReplaceInsn .
-  for dir in ${OUTDS[@]}; do
-    rm -r $dir/bin 2> /dev/null
+  for dir in ${COMPILED_OUTDS[@]}; do
     rm -r $dir/bintraces 2> /dev/null
   done
-  for dir in ${COMPILED_OUTDS[@]}; do
+  for dir in ${OUTDS[@]}; do
+    rm -r $dir/bin 2> /dev/null
     rm -r $dir/bintraces 2> /dev/null
   done
   # set up a new configuration file
