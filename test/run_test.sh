@@ -51,8 +51,10 @@ elif [ $1 -ge 1 -a $1 -le 4 ]; then
   testcase${1}
 else
   echo "Usage: $./run_test.sh {init, 1, 2}"
-  echo "    1: the first test w/ Microwave example"
-  echo "    2: the second test w/ Infusion Pump example"
+  echo "    init: Initialize the test directory. Remove the clutter"
+  echo "    1   : Run the first test Microwave - GCC"
+  echo "    2   : Run the second test of Infusion Pump - GCC"
+  echo "    3   : Run the third test of Microwave - Clang"
   exit
 fi
 
