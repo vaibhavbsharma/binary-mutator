@@ -141,15 +141,14 @@ int main(int argc, char **argv){
 							conditionString = "NOP";
 							cout<<"  replacing with nop\n";
 						} else if(!mutatedBranch(addr, COND_TAKEN)) {
-							MachRegister srcReg, dstReg;
               vector<Operand> operands;
 			        iptr->getOperands(operands);
 			        MyVisitor *myVisitor = new MyVisitor(debug);
-			        Expression::Ptr ePtr = operands[0].getValue();
+			        Expression::Ptr ePtr = operands[1].getValue();
 			        ePtr->apply(myVisitor);
-							BPatch_snippet *dst = NULL;
+							BPatch_snippet *src = NULL;
 							if(myVisitor->isRegister)
-								dst = new BPatch_registerExpr(myVisitor->getRegUsed());
+								src = new BPatch_registerExpr(myVisitor->getRegUsed());
 							else if(myVisitor->isDereference) {
 								set<BPatch_opCode> axs;
 								axs.insert(BPatch_opStore);
@@ -163,25 +162,20 @@ int main(int argc, char **argv){
 									}
 								}
 								BPatch_snippet *eae = new BPatch_effectiveAddressExpr(); 
-								dst = eae;
+								src = eae;
 							}
-							//dstReg = myVisitor->getRegUsed();
 							myVisitor = new MyVisitor(debug);
-              ePtr = operands[1].getValue();
+              ePtr = operands[0].getValue();
 			        ePtr->apply(myVisitor);
-							// if source is register
+							// if dst is register
 							if(myVisitor->isRegister) {
-						    BPatch_registerExpr *src = new BPatch_registerExpr(myVisitor->getRegUsed());
-							  srcReg = myVisitor->getRegUsed();
+						    BPatch_registerExpr *dst = new BPatch_registerExpr(myVisitor->getRegUsed());
 		            BPatch_arithExpr *mov= new BPatch_arithExpr(BPatch_assign, *dst, *src);
                 handler = PatchAPI::convert(mov);
-							  //cout<<"  replacing with "<<dstReg.name() <<" = " << srcReg.name()<<endl;
-							} else { // source is immediate
-						    BPatch_constExpr *src = new BPatch_constExpr(myVisitor->getImmediateValue());
+							} else { // dst is immediate which makes no sense
+						    BPatch_constExpr *dst = new BPatch_constExpr(myVisitor->getImmediateValue());
 		            BPatch_arithExpr *mov= new BPatch_arithExpr(BPatch_assign, *dst, *src);
                 handler = PatchAPI::convert(mov);
-							  //cout<<"  replacing with "<<dstReg.name() <<" = " 
-									//<< myVisitor->getImmediateValue()<<endl;
 							}
 							condition = COND_TAKEN;
 							conditionString = "MOV";
