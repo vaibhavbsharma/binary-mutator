@@ -29,6 +29,8 @@ using namespace InstructionAPI;
 
 BPatch bpatch;
 
+bool onlyNops = true;
+
 BPatch_addressSpace *startInstrumenting(const char *name) {
   BPatch_addressSpace *handle = NULL;
   handle = bpatch.openBinary(name);
@@ -92,7 +94,7 @@ int main(int argc, char **argv){
           void *addr = (void*)((*j).first);
 					Instruction::Ptr iptr = (*j).second;
 					if(debug) {
-						cout<<"  "<<iptr->format()<<endl;
+						cout<<"  "<<iptr->format()<<" id = " <<iptr->getOperation().getID()<<endl;
 					}
           int nbytes = iptr->size();
 #define MAX_RAW_INSN_SIZE 16
@@ -122,8 +124,30 @@ int main(int argc, char **argv){
 		      //   		 *add42);
           //   Snippet::Ptr handler = PatchAPI::convert(addOne);
 					// 	buildReplacement(addr, &(*iptr), patchBlock, true, point, handler);
-			    // } 
-			    if(isCMOVCC(iptr->getOperation().getID()) &&
+			    // }
+					if(onlyNops && iptr->getOperation().getID() == e_nop && 
+							(!mutatedBranch(addr, COND_NOT_TAKEN)) &&
+							!mutated) {
+						cout<<"  found noop\n";
+            PointMaker *pointMaker = patchMgrPtr->pointMaker();
+						Location loc = Location::InstructionInstance(
+								PatchAPI::convert((*all_BPatch_funcs)[i]),
+								patchBlock, (Address)addr);
+						Point *point = pointMaker->createPoint(loc, Point::Type::PreInsn);
+            BPatch_constExpr *nop = new BPatch_constExpr(42);
+						Snippet::Ptr handler = PatchAPI::convert(nop);
+						condition = COND_NOT_TAKEN;
+						conditionString = "NOP";
+						cout<<"  replacing with nop\n";
+            buildReplacement(addr, &(*iptr), patchBlock, debug, point, handler);
+					  checkpointMutation(addr, condition);
+						char tmpString[20];
+						sprintf(tmpString, "0x%x", addr);
+						mutationSuffix = tmpString;
+						mutationSuffix += "-nop-" + conditionString;
+						mutated = true;
+					}
+			    if(!onlyNops && isCMOVCC(iptr->getOperation().getID()) &&
 						 (!mutatedBranch(addr, COND_NOT_TAKEN) ||
 							!mutatedBranch(addr, COND_TAKEN)) && 
 						 !mutated) {
@@ -189,7 +213,7 @@ int main(int argc, char **argv){
 						mutated = true;
 			    }
 
-          if(isSETCC(iptr->getOperation().getID()) &&
+          if(!onlyNops && isSETCC(iptr->getOperation().getID()) &&
 						 (!mutatedBranch(addr, COND_NOT_TAKEN) ||
 							!mutatedBranch(addr, COND_TAKEN)) && 
 						 !mutated) {
@@ -208,8 +232,9 @@ int main(int argc, char **argv){
 			      Expression::Ptr ePtr = operands[0].getValue();
 			      ePtr->apply(myVisitor);
 						BPatch_snippet *dst = NULL;
-						if(myVisitor->isRegister)
+						if(myVisitor->isRegister) {
 							dst = new BPatch_registerExpr(myVisitor->getRegUsed());
+						}
 						else if(myVisitor->isDereference) {
 							set<BPatch_opCode> axs;
 							axs.insert(BPatch_opStore);
@@ -228,14 +253,14 @@ int main(int argc, char **argv){
 						//dstReg = myVisitor->getRegUsed();
 
 						if(!mutatedBranch(addr, COND_NOT_TAKEN)) {
-						  BPatch_constExpr *setZero = new BPatch_constExpr(0);
+						  BPatch_constExpr *setZero = new BPatch_constExpr(false);
 		          BPatch_arithExpr *mov= new BPatch_arithExpr(BPatch_assign, *dst, *setZero);
               handler = PatchAPI::convert(mov);
 							condition = COND_NOT_TAKEN;
 							conditionString = "SET0";
 							//cout<<"  setting "<<dstReg.name()<<" to 0\n";
 						} else if(!mutatedBranch(addr, COND_TAKEN)) {
-             BPatch_constExpr *setOne = new BPatch_constExpr(1);
+             BPatch_constExpr *setOne = new BPatch_constExpr(true);
 		          BPatch_arithExpr *mov= new BPatch_arithExpr(BPatch_assign, *dst, *setOne);
               handler = PatchAPI::convert(mov);
 							condition = COND_TAKEN;
@@ -251,7 +276,7 @@ int main(int argc, char **argv){
 						mutated = true;
 			    }
 
-					if(iptr->getCategory()==c_BranchInsn && 
+					if(!onlyNops && iptr->getCategory()==c_BranchInsn && 
 							iptr->getOperation().getID() != e_jmp &&
 							!mutatedBranch(addr, COND_NOT_TAKEN) &&
 							!mutated) {
@@ -284,7 +309,7 @@ int main(int argc, char **argv){
 							mutated = true;
 						}
 					}
-					if(iptr->getCategory()==c_BranchInsn &&
+					if(!onlyNops && iptr->getCategory()==c_BranchInsn &&
 							iptr->getOperation().getID() != e_jmp &&
 							!mutatedBranch(addr, COND_TAKEN) &&
 							!mutated) {
