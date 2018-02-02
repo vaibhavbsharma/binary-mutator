@@ -66,7 +66,12 @@ class MyVisitor: public Dyninst::InstructionAPI::Visitor {
     }
     
 		virtual void visit ( Dyninst::InstructionAPI::Dereference * d ) {
-			if (debug) cout <<" \tVisiting Dereference\n";
+			if (debug) cout <<" \tVisiting Dereference ";
+			/*std::vector<Dyninst::InstructionAPI::InstructionAST::Ptr> children;
+			d->getChildren(children);
+			Dyninst::InstructionAPI::Result result = (*children[0]).eval();
+			unsigned long long address = result.convert<unsigned long long>();
+			cout<<" address = "<<address<<" result = "<<result.format()<<endl;*/
 			isDereference = true;
 			isRegister = isImmediate = isBinaryFunction = false;
 		};

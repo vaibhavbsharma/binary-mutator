@@ -29,7 +29,8 @@ using namespace InstructionAPI;
 
 BPatch bpatch;
 
-bool onlyNops = true;
+// 1 = noops, 2 = cmovCC, 4 = setCC, 8 = jCC
+int targetInsnType = 2 + 4 + 8; 
 
 BPatch_addressSpace *startInstrumenting(const char *name) {
   BPatch_addressSpace *handle = NULL;
@@ -125,7 +126,7 @@ int main(int argc, char **argv){
           //   Snippet::Ptr handler = PatchAPI::convert(addOne);
 					// 	buildReplacement(addr, &(*iptr), patchBlock, true, point, handler);
 			    // }
-					if(onlyNops && iptr->getOperation().getID() == e_nop && 
+					if((targetInsnType & 1) && iptr->getOperation().getID() == e_nop && 
 							(!mutatedBranch(addr, COND_NOT_TAKEN)) &&
 							!mutated) {
 						cout<<"  found noop\n";
@@ -147,7 +148,7 @@ int main(int argc, char **argv){
 						mutationSuffix += "-nop-" + conditionString;
 						mutated = true;
 					}
-			    if(!onlyNops && isCMOVCC(iptr->getOperation().getID()) &&
+			    if((targetInsnType & 2) && isCMOVCC(iptr->getOperation().getID()) &&
 						 (!mutatedBranch(addr, COND_NOT_TAKEN) ||
 							!mutatedBranch(addr, COND_TAKEN)) && 
 						 !mutated) {
@@ -213,7 +214,7 @@ int main(int argc, char **argv){
 						mutated = true;
 			    }
 
-          if(!onlyNops && isSETCC(iptr->getOperation().getID()) &&
+          if((targetInsnType & 4)&& isSETCC(iptr->getOperation().getID()) &&
 						 (!mutatedBranch(addr, COND_NOT_TAKEN) ||
 							!mutatedBranch(addr, COND_TAKEN)) && 
 						 !mutated) {
@@ -236,6 +237,7 @@ int main(int argc, char **argv){
 							dst = new BPatch_registerExpr(myVisitor->getRegUsed());
 						}
 						else if(myVisitor->isDereference) {
+							continue;
 							set<BPatch_opCode> axs;
 							axs.insert(BPatch_opStore);
 							vector<BPatch_point *> *points = (*all_BPatch_funcs)[i]->findPoint(axs);
@@ -246,27 +248,54 @@ int main(int argc, char **argv){
 									point = PatchAPI::convert(thisPoint, BPatch_callBefore);
 								}
 							}
-							BPatch_snippet *eae = new BPatch_effectiveAddressExpr(); 
-							//dst = new BPatch_arithExpr(BPatch_deref, *eae);
+							BPatch_effectiveAddressExpr *eae = new BPatch_effectiveAddressExpr(); 
 							dst = eae;
 						}
-						//dstReg = myVisitor->getRegUsed();
-
+						BPatch_snippet *zero = new BPatch_constExpr(0);
+						BPatch_snippet *one = new BPatch_constExpr(1);
+						BPatch_snippet *two56= new BPatch_constExpr(256);
+						BPatch_snippet *src = NULL, *supportingSnippet = NULL;
 						if(!mutatedBranch(addr, COND_NOT_TAKEN)) {
-						  BPatch_constExpr *setZero = new BPatch_constExpr(false);
-		          BPatch_arithExpr *mov= new BPatch_arithExpr(BPatch_assign, *dst, *setZero);
-              handler = PatchAPI::convert(mov);
+							if(myVisitor->isRegister)
+								src = zero;
+							else if(myVisitor->isDereference) {
+								BPatch_snippet *derefVarExpr = new BPatch_arithExpr(BPatch_deref, *dst);
+								/*BPatch_registerExpr *r10 = new BPatch_registerExpr(Dyninst::x86_64::r10);
+								supportingSnippet = new BPatch_arithExpr(BPatch_assign, *r10, *derefVarExpr);*/
+								BPatch_snippet *value = derefVarExpr;
+								BPatch_snippet *valueDiv256 = 
+									new BPatch_arithExpr(BPatch_divide, *value, *two56);
+								BPatch_snippet *valueDiv256Mul256 = 
+									new BPatch_arithExpr(BPatch_times, *valueDiv256, *two56);
+								src = new BPatch_arithExpr(BPatch_plus, *valueDiv256Mul256, *zero);
+							}
 							condition = COND_NOT_TAKEN;
 							conditionString = "SET0";
-							//cout<<"  setting "<<dstReg.name()<<" to 0\n";
 						} else if(!mutatedBranch(addr, COND_TAKEN)) {
-             BPatch_constExpr *setOne = new BPatch_constExpr(true);
-		          BPatch_arithExpr *mov= new BPatch_arithExpr(BPatch_assign, *dst, *setOne);
-              handler = PatchAPI::convert(mov);
+							if(myVisitor->isRegister)
+								src = one;
+							else if(myVisitor->isDereference) {
+								BPatch_snippet *derefVarExpr = new BPatch_arithExpr(BPatch_deref, *dst);
+                /*BPatch_registerExpr *r10 = new BPatch_registerExpr(Dyninst::x86_64::r10);
+								supportingSnippet = new BPatch_arithExpr(BPatch_assign, *r10, *derefVarExpr);*/
+								BPatch_snippet *value = derefVarExpr;
+								BPatch_snippet *valueDiv256 = 
+									new BPatch_arithExpr(BPatch_divide, *value, *two56);
+								BPatch_snippet *valueDiv256Mul256 = 
+									new BPatch_arithExpr(BPatch_times, *valueDiv256, *two56);
+								src = new BPatch_arithExpr(BPatch_plus, *valueDiv256Mul256, *one);
+							}
 							condition = COND_TAKEN;
 							conditionString = "SET1";
-							//cout<<"  setting "<<dstReg.name()<<" to 1\n";
 						}
+						assert(src != NULL);
+						assert(dst != NULL);
+						BPatch_arithExpr *finalMov;
+					  BPatch_arithExpr *mov = new BPatch_arithExpr(BPatch_assign, *dst, *src);
+						if(supportingSnippet != NULL) 
+							finalMov = new BPatch_arithExpr(BPatch_seq, *supportingSnippet, *mov);
+						else finalMov = mov;
+            handler = PatchAPI::convert(finalMov);
 						buildReplacement(addr, &(*iptr), patchBlock, debug, point, handler);
 					  checkpointMutation(addr, condition);
 						char tmpString[20];
@@ -276,7 +305,7 @@ int main(int argc, char **argv){
 						mutated = true;
 			    }
 
-					if(!onlyNops && iptr->getCategory()==c_BranchInsn && 
+					if((targetInsnType & 8) && iptr->getCategory()==c_BranchInsn && 
 							iptr->getOperation().getID() != e_jmp &&
 							!mutatedBranch(addr, COND_NOT_TAKEN) &&
 							!mutated) {
@@ -309,7 +338,7 @@ int main(int argc, char **argv){
 							mutated = true;
 						}
 					}
-					if(!onlyNops && iptr->getCategory()==c_BranchInsn &&
+					if((targetInsnType & 8) && iptr->getCategory()==c_BranchInsn &&
 							iptr->getOperation().getID() != e_jmp &&
 							!mutatedBranch(addr, COND_TAKEN) &&
 							!mutated) {
