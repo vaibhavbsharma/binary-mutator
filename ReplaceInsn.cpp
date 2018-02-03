@@ -126,6 +126,13 @@ int main(int argc, char **argv){
           //   Snippet::Ptr handler = PatchAPI::convert(addOne);
 					// 	buildReplacement(addr, &(*iptr), patchBlock, true, point, handler);
 			    // }
+
+					// this assumes that it is ok to clobber r12
+					BPatch_registerExpr *r12 = new BPatch_registerExpr(Dyninst::x86_64::r12);
+					BPatch_registerExpr *r10 = new BPatch_registerExpr(Dyninst::x86_64::r10);
+					BPatch_snippet *r10TOr12 = new BPatch_arithExpr(BPatch_assign, *r12, *r10);
+					BPatch_snippet *r12TOr10 = new BPatch_arithExpr(BPatch_assign, *r10, *r12);
+					BPatch_snippet *nop = new BPatch_arithExpr(BPatch_seq, *r10TOr12, *r12TOr10);
 					if((targetInsnType & 1) && iptr->getOperation().getID() == e_nop && 
 							(!mutatedBranch(addr, COND_NOT_TAKEN)) &&
 							!mutated) {
@@ -135,7 +142,6 @@ int main(int argc, char **argv){
 								PatchAPI::convert((*all_BPatch_funcs)[i]),
 								patchBlock, (Address)addr);
 						Point *point = pointMaker->createPoint(loc, Point::Type::PreInsn);
-            BPatch_constExpr *nop = new BPatch_constExpr(42);
 						Snippet::Ptr handler = PatchAPI::convert(nop);
 						condition = COND_NOT_TAKEN;
 						conditionString = "NOP";
@@ -160,7 +166,6 @@ int main(int argc, char **argv){
 						Point *point = pointMaker->createPoint(loc, Point::Type::PreInsn);
 						Snippet::Ptr handler;
 						if(!mutatedBranch(addr, COND_NOT_TAKEN)) {
-						  BPatch_constExpr *nop = new BPatch_constExpr(42);
               handler = PatchAPI::convert(nop);
 							condition = COND_NOT_TAKEN;
 							conditionString = "NOP";
@@ -196,11 +201,15 @@ int main(int argc, char **argv){
 							if(myVisitor->isRegister) {
 						    BPatch_registerExpr *dst = new BPatch_registerExpr(myVisitor->getRegUsed());
 		            BPatch_arithExpr *mov= new BPatch_arithExpr(BPatch_assign, *dst, *src);
-                handler = PatchAPI::convert(mov);
+								BPatch_snippet *r10TOr12_mov = new BPatch_arithExpr(BPatch_seq, *r10TOr12, *mov);
+								BPatch_snippet *finalMov = new BPatch_arithExpr(BPatch_seq, *r10TOr12_mov, *r12TOr10);
+                handler = PatchAPI::convert(finalMov);
 							} else { // dst is immediate which makes no sense
 						    BPatch_constExpr *dst = new BPatch_constExpr(myVisitor->getImmediateValue());
 		            BPatch_arithExpr *mov= new BPatch_arithExpr(BPatch_assign, *dst, *src);
-                handler = PatchAPI::convert(mov);
+								BPatch_snippet *r10TOr12_mov = new BPatch_arithExpr(BPatch_seq, *r10TOr12, *mov);
+								BPatch_snippet *finalMov = new BPatch_arithExpr(BPatch_seq, *r10TOr12_mov, *r12TOr10);
+                handler = PatchAPI::convert(finalMov);
 							}
 							condition = COND_TAKEN;
 							conditionString = "MOV";
@@ -237,7 +246,6 @@ int main(int argc, char **argv){
 							dst = new BPatch_registerExpr(myVisitor->getRegUsed());
 						}
 						else if(myVisitor->isDereference) {
-							continue;
 							set<BPatch_opCode> axs;
 							axs.insert(BPatch_opStore);
 							vector<BPatch_point *> *points = (*all_BPatch_funcs)[i]->findPoint(axs);
@@ -256,35 +264,37 @@ int main(int argc, char **argv){
 						BPatch_snippet *two56= new BPatch_constExpr(256);
 						BPatch_snippet *src = NULL, *supportingSnippet = NULL;
 						if(!mutatedBranch(addr, COND_NOT_TAKEN)) {
-							if(myVisitor->isRegister)
+							src = zero;
+							/* if(myVisitor->isRegister)
 								src = zero;
 							else if(myVisitor->isDereference) {
 								BPatch_snippet *derefVarExpr = new BPatch_arithExpr(BPatch_deref, *dst);
-								/*BPatch_registerExpr *r10 = new BPatch_registerExpr(Dyninst::x86_64::r10);
-								supportingSnippet = new BPatch_arithExpr(BPatch_assign, *r10, *derefVarExpr);*/
+								//BPatch_registerExpr *r10 = new BPatch_registerExpr(Dyninst::x86_64::r10);
+								//supportingSnippet = new BPatch_arithExpr(BPatch_assign, *r10, *derefVarExpr);
 								BPatch_snippet *value = derefVarExpr;
 								BPatch_snippet *valueDiv256 = 
 									new BPatch_arithExpr(BPatch_divide, *value, *two56);
 								BPatch_snippet *valueDiv256Mul256 = 
 									new BPatch_arithExpr(BPatch_times, *valueDiv256, *two56);
 								src = new BPatch_arithExpr(BPatch_plus, *valueDiv256Mul256, *zero);
-							}
+							} */
 							condition = COND_NOT_TAKEN;
 							conditionString = "SET0";
 						} else if(!mutatedBranch(addr, COND_TAKEN)) {
-							if(myVisitor->isRegister)
+							src = one;
+							/* if(myVisitor->isRegister)
 								src = one;
 							else if(myVisitor->isDereference) {
 								BPatch_snippet *derefVarExpr = new BPatch_arithExpr(BPatch_deref, *dst);
-                /*BPatch_registerExpr *r10 = new BPatch_registerExpr(Dyninst::x86_64::r10);
-								supportingSnippet = new BPatch_arithExpr(BPatch_assign, *r10, *derefVarExpr);*/
+                // BPatch_registerExpr *r10 = new BPatch_registerExpr(Dyninst::x86_64::r10);
+								// supportingSnippet = new BPatch_arithExpr(BPatch_assign, *r10, *derefVarExpr);
 								BPatch_snippet *value = derefVarExpr;
 								BPatch_snippet *valueDiv256 = 
 									new BPatch_arithExpr(BPatch_divide, *value, *two56);
 								BPatch_snippet *valueDiv256Mul256 = 
 									new BPatch_arithExpr(BPatch_times, *valueDiv256, *two56);
 								src = new BPatch_arithExpr(BPatch_plus, *valueDiv256Mul256, *one);
-							}
+							} */
 							condition = COND_TAKEN;
 							conditionString = "SET1";
 						}
