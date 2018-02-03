@@ -1,4 +1,5 @@
 #include "entryIDs.h"
+#include "Register.h"
 bool isCMOVCC(entryID e) {
 	switch(e) {
     case e_cmovbe:
@@ -42,4 +43,25 @@ bool isSETCC(entryID e) {
 			return true;
 		default: return false;
 	}
+}
+
+Dyninst::MachRegister GetNextReg(Dyninst::MachRegister reg) {
+		if (reg == Dyninst::x86_64::r10) return Dyninst::x86_64::r11;
+		if (reg == Dyninst::x86_64::r11) return Dyninst::x86_64::r12;
+		if (reg == Dyninst::x86_64::r12) return Dyninst::x86_64::r13;
+		if (reg == Dyninst::x86_64::r13) return Dyninst::x86_64::r14;
+		if (reg == Dyninst::x86_64::r14) return Dyninst::x86_64::r10;
+		return reg;
+}
+
+bool RegIsOperand(vector<Operand> operands, Dyninst::MachRegister reg, int debug) {
+  for(int num = 0; num < operands.size(); num++) {
+	  MyVisitor *myVisitor = new MyVisitor(debug);
+	  Expression::Ptr ePtr = operands[num].getValue();
+	  ePtr->apply(myVisitor);
+	  if(myVisitor->isRegister) {
+	  	if (myVisitor->getRegUsed() == reg) return true;
+	  }
+	}
+	return false;
 }

@@ -59,6 +59,10 @@ int main(int argc, char **argv){
 		if(strcmp(argv[3],"1") == 0 || strcmp(argv[3], "true") == 0)
 			debug = true;
 	}
+	char fixOrigBinaryCmd[100];
+	sprintf(fixOrigBinaryCmd, "python rewrite-binary.py %s", binaryPath);
+	printf("about to fix original binary: %s\n", fixOrigBinaryCmd);
+	system(fixOrigBinaryCmd);
 	initMutationCheckpoint(binaryPath, debug);
 	BPatch_addressSpace *handle = startInstrumenting(binaryPath);
 	handle->beginInsertionSet();
@@ -127,8 +131,15 @@ int main(int argc, char **argv){
 					// 	buildReplacement(addr, &(*iptr), patchBlock, true, point, handler);
 			    // }
 
-					// this assumes that it is ok to clobber r12
-					BPatch_registerExpr *r12 = new BPatch_registerExpr(Dyninst::x86_64::r12);
+          vector<Operand> operands;
+			    iptr->getOperands(operands);
+					// this assumes that it is ok to clobber r12 for insns with no operands
+					// which is ok to assume because we don't mutate insns with no operands
+					Dyninst::MachRegister clobberThisReg = Dyninst::x86_64::r12;
+					while (RegIsOperand(operands, clobberThisReg, debug)) {
+						clobberThisReg = GetNextReg(clobberThisReg);
+					}	
+					BPatch_registerExpr *r12 = new BPatch_registerExpr(clobberThisReg);
 					BPatch_registerExpr *r10 = new BPatch_registerExpr(Dyninst::x86_64::r10);
 					BPatch_snippet *r10TOr12 = new BPatch_arithExpr(BPatch_assign, *r12, *r10);
 					BPatch_snippet *r12TOr10 = new BPatch_arithExpr(BPatch_assign, *r10, *r12);
@@ -456,6 +467,11 @@ int main(int argc, char **argv){
   printf("Writing new binary to \"%s\" ...\n", outFile.c_str());
   ((BPatch_binaryEdit*)handle)->writeFile(outFile.c_str());
   printf("Done.\n");
+
+	char fixMutBinaryCmd[100];
+	sprintf(fixMutBinaryCmd, "python rewrite-binary.py %s", outFile.c_str());
+	printf("about to fix mutant binary: %s\n", outFile.c_str());
+	system(fixMutBinaryCmd);
   return 0;
 }
 

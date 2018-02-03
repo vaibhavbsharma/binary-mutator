@@ -21,9 +21,9 @@ with open(filename, 'wb') as f:
     elif '\x4d\x89\x10' in data: #fixes 8-byte setCC mutation writes in mutant binary
         corrected = 1
         f.write(data.replace(b'\x4d\x89\x10', b'\x4d\x88\x10'))
-    elif '\x4d\x8b\xd3' in data: #converts mov r11 to r10 into a noop
-        corrected = 1
-        f.write(data.replace(b'\x4d\x8b\xd3', b'\x90\x90\x90'))
+    # elif '\x4d\x8b\xd3' in data: #converts mov r11 to r10 into a noop
+    #     corrected = 1
+    #     f.write(data.replace(b'\x4d\x8b\xd3', b'\x90\x90\x90'))
     if corrected == 1:
         print "rewrote ",filename
     else: 
