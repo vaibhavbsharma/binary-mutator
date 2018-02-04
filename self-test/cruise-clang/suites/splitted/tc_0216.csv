@@ -1,0 +1,14 @@
+accelResume,brakePedal,cancel,carGear,carSpeed,decelSet,onOff,validInputs
+true,false,false,-135,804/81,true,true,false
+true,true,true,482,913/63,false,true,false
+true,false,true,-807,75/39,true,true,true
+false,false,true,-946,-163/71,true,false,true
+false,false,false,-298,169/40,false,false,true
+true,false,false,681,86/21,false,true,true
+true,true,false,-793,-491/20,true,true,false
+false,true,true,424,-335/58,true,true,true
+true,true,false,-189,895/53,false,true,false
+true,true,false,-383,803/87,true,false,true
+true,true,false,501,156/59,true,false,true
+true,false,false,-911,620/2,false,false,false
+false,true,true,-768,-941/40,false,false,true

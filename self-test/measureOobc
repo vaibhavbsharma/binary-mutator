@@ -1,0 +1,133 @@
+#!/bin/bash
+#
+# measureOobc
+#
+# @author: Taejoon Byun <taejoon@umn.edu>
+#
+# first: Dec 11 2017
+# last : Jan 28 2018
+
+if [ "$#" -ne 2 -a "$#" -ne 3 ]; then
+  echo -e "$HEADER Invalid number of arguments"
+  echo "  \$1: system dir"
+  echo "  \$2: out dir"
+  exit 1
+fi
+
+source config.sh $1 $2 $3
+
+HEADER="$PURPLE[measureOobc]$ENDL"
+
+BINARY_MUTATOR=$TOOL_ROOT/make-mutants.pl
+MTESTER=$TOOL_ROOT/mtester
+MAX_PARALLEL=$((MAX_CORES))
+DELAY_SECS=0.2
+
+
+function generate_binary_mutants() {
+  [ "$#" -ne 1 ] && { \
+    exception "generate_binary_mutants()" "Illegal #args"; exit 1; }
+  local bin=$1; local bindir=$(get_bin_dir)
+  if [ -d "$(get_binary_mutants_dir $bin)" ]; then
+    if [ $(ls $(get_binary_mutants_dir $bin) | wc -w) -ge 1 ]; then
+      # already exists
+      echo -e "$HEADER$BLUE Binary mutants for $GREEN$bin$BLUE already exist$ENDL"
+      return
+    fi
+  fi
+  for func in $(cat $(get_flist)); do
+    if $IS_DEBUG; then
+      echo -e "$HEADER$BLUE $BINARY_MUTATOR $GREEN$(relpath $bindir/$bin) $func$ENDL"
+      $BINARY_MUTATOR $bindir/$bin $func
+    else
+      $BINARY_MUTATOR $bindir/$bin $func > /dev/null
+    fi
+    cp $bindir/$bin $bindir/$bin-mutants/$bin-correct
+  done
+  echo -e "$HEADER Finished generating mutants for $GREEN$bin$ENDL"
+}
+
+function run_master_suite_on_mutants() {
+  [ "$#" -ne 2 ] && { \
+    exception $HEADER"::run_master_suite_on_mutants" "Invalid #args"; exit 1; }
+  local bin=$1; local mut=$2
+
+  for tc in $(get_splitted_test_cases); do
+    trace=$(get_bintrace $bin $mut $tc)
+    # make sure there's a trace even when the mutant crashes and fail to
+    # generate a trace
+    touch $trace
+    if $IS_DEBUG; then
+      #echo -e "$HEADER$BLUE ./$mut $GREEN$(relpath $tc) $trace$ENDL"
+      ./$mut $tc $trace > /dev/null #&
+    else
+      read err < <({ ./$mut $tc $trace > /dev/null;
+        #[ $? -eq 139 ] && echo "segfault @ $mut `basename $tc` ";
+      } 2>&1)
+      if [ "$err" != "" ]; then
+        echo "SEGFAULT @ $bin $mut"
+        echo "$bin $mut $tc $trace" >> $error_log
+      fi
+    fi
+  done
+}
+
+function generate_traces() {
+  for bin in $(get_binaries); do
+    if [ -d $(get_bintrace_dir $bin) ]; then
+      if [ $(ls $(get_bintrace_dir $bin) | wc -w) -gt 0 ]; then
+        echo -e "$HEADER$BLUE Binary traces for$GREEN $bin$BLUE already exists"
+        continue
+      fi
+    fi
+    cd $(get_binary_mutants_dir $bin)
+    i=0; cnt=$(echo $(get_binary_mutants $bin) | wc -w)
+    echo -e "$HEADER$BLUE Running$GREEN $cnt ${BLUE}mutants of$GREEN $bin$ENDL"
+    for mutant in $(get_binary_mutants $bin); do
+      run_master_suite_on_mutants $bin $mutant &
+      i=$((i+1)); print_parallel_progress $i $cnt "mutants"
+    done
+    wait
+    printf "\n"
+  done
+}
+
+# make & generate binary mutants
+make_binaries
+for bin in $(get_binaries); do
+  echo -e "$HEADER$BLUE Generating binary mutants for$GREEN $bin$ENDL"
+  if $IS_DEBUG; then
+    generate_binary_mutants $bin
+  else
+    generate_binary_mutants $bin &
+  fi
+done
+wait
+
+error_log=$(get_results_dir)/"crashing_bin_mutants.txt"
+[ -f $error_log ] && rm $error_log
+
+generate_traces
+
+cd $TOOL_ROOT
+
+# construct obligation satisfaction matrix
+#
+# |        | mutant 1 | mutant 2   |
+# |--------|----------|------------|
+# | test 1 | 0        | 1 (killed) |
+# | test 2 | 0        | 0          |
+
+echo -e "$HEADER$BLUE Performing mutation analysis$ENDL"
+#sudo mount -t tmpfs -o size=10g tmpfs /mnt/ramdisk
+for bin in $(get_binaries); do
+  matrix=$(get_coverage_matrix "oobc_$bin")
+  [ -f $matrix ] && rm $matrix
+  #{ rm $matrix; touch $matrix; }
+  cp -r $(get_bintrace_dir $bin) /mnt/ramdisk/
+  echo -e "mtester /mnt/ramdisk $bin > $(relpath $matrix)"
+  $MTESTER /mnt/ramdisk $bin > $matrix
+  rm -r /mnt/ramdisk/$bin
+done
+wait
+
