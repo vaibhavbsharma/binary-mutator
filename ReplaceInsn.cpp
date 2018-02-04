@@ -3,6 +3,9 @@
 #include <iostream>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <memory>
+#include <stdexcept>
+#include <cstdio>
 
 #include "CodeObject.h"
 #include "InstructionDecoder.h"
@@ -20,6 +23,7 @@
 
 #include "Mutation.h"
 #include "InsnUtils.h"
+#include "ExecUtils.h"
 
 using namespace std;
 using namespace Dyninst;
@@ -60,7 +64,7 @@ int main(int argc, char **argv){
 			debug = true;
 	}
 	char fixOrigBinaryCmd[100];
-	sprintf(fixOrigBinaryCmd, "python rewrite-binary.py %s", binaryPath);
+	sprintf(fixOrigBinaryCmd, "python rewrite-binary.py %s original", binaryPath);
 	printf("about to fix original binary: %s\n", fixOrigBinaryCmd);
 	system(fixOrigBinaryCmd);
 	initMutationCheckpoint(binaryPath, debug);
@@ -469,9 +473,11 @@ int main(int argc, char **argv){
   printf("Done.\n");
 
 	char fixMutBinaryCmd[100];
-	sprintf(fixMutBinaryCmd, "python rewrite-binary.py %s", outFile.c_str());
+	sprintf(fixMutBinaryCmd, "python rewrite-binary.py %s mutated", outFile.c_str());
 	printf("about to fix mutant binary: %s\n", outFile.c_str());
-	system(fixMutBinaryCmd);
+  system(fixMutBinaryCmd);
   return 0;
 }
+
+
 
