@@ -7,7 +7,6 @@ LIBELF_LIBRARIES=/export/scratch/vaibhav/elfutils/elfutils-install/lib/
 LIBDWARF_INCLUDE_DIR=LIBELF_INCLUDE_DIR 
 LIBDWARF_LIBRARIES=LIBELF_LIBRARIES
 
-
 default: ReplaceInsn CMOVReplace dyninst-test small-cmov-eg small-setcc-eg
 
 ReplaceInsn: ReplaceInsn.cpp $(HEADERS)
