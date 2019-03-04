@@ -1,0 +1,21 @@
+#!/bin/bash
+# experiment configuration
+
+COMPILER=clang
+COVERAGE_CRITERIA=("mcdc" "obc" "oobc" "all" "random") # "tboobc")
+ORACLE_KIND="output"
+OBC_TYPES=("J" "JSMB")
+N_MUTANTS=250
+N_TEST_SUITES=40
+
+IS_UNIVERSAL_SUITE=true
+IS_GENERATE_TESTS=false
+IS_GENERATE_MUTANTS=false
+IS_CHECK_EQUIVALENCE=false
+IS_MEASURE_OBC=true
+IS_GENERATE_TRACE=true
+
+MAX_CORES=4
+JVM_MEM="16384m"
+MC_TIMEOUT=30
+IS_DEBUG=false
