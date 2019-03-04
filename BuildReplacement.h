@@ -36,7 +36,8 @@ bool overwriteBlock(PatchBlock *block, unsigned char val) {
 string disassembleBlock(PatchBlock *block) {
     PatchBlock::Insns insns;
     PatchBlock::Insns::iterator j;
-    Instruction::Ptr iptr;
+    //Instruction::Ptr iptr;
+    InstructionAPI::Instruction insn;
     void *addr;
     unsigned char bytes[64];
     size_t nbytes, i;
@@ -48,17 +49,21 @@ string disassembleBlock(PatchBlock *block) {
 
         // get instruction bytes
         addr = (void*)((*j).first);
-        iptr = (*j).second;
-        nbytes = iptr->size();
+        //iptr = (*j).second;
+	insn = (*j).second;
+        //nbytes = iptr->size();
+        nbytes = insn.size();
         assert(nbytes <= 64);
         for (i=0; i<nbytes; i++) {
-            bytes[i] = iptr->rawByte(i);
+            //bytes[i] = iptr->rawByte(i);
+            bytes[i] = insn.rawByte(i);
         }
         bytes[nbytes] = '\0';
 
         sprintf(buffer, "%08lx\t", (unsigned long)addr);
         str.append(buffer);
-        str.append(iptr->format());
+        //str.append(iptr->format());
+        str.append(insn.format());
         str.append("\n");
     }
     return str;

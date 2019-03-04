@@ -88,12 +88,14 @@ int main(int argc, char **argv){
 			patchBlock->getInsns(insns);
       PatchBlock::Insns::iterator j;
       for (j = insns.begin(); j != insns.end() && !mutated; j++) {
-          // get instruction bytes
-          void *addr = (void*)((*j).first);
-					Instruction::Ptr iptr = (*j).second;
-					if(debug) {
-						cout<<"  "<<iptr->format()<<endl;
-					}
+        // get instruction bytes
+        void *addr = (void*)((*j).first);
+	//Instruction::Ptr iptr = (*j).second;
+        InstructionAPI::Instruction insn = (*j).second;
+	InstructionAPI::Instruction *iptr = &insn;
+	if(debug) {
+		cout<<"  "<<iptr->format()<<" id = " <<iptr->getOperation().getID()<<endl;
+	}
           int nbytes = iptr->size();
 #define MAX_RAW_INSN_SIZE 16
           assert(nbytes <= MAX_RAW_INSN_SIZE);
@@ -122,7 +124,10 @@ int main(int argc, char **argv){
 		      //   		 *add42);
           //   Snippet::Ptr handler = PatchAPI::convert(addOne);
 					// 	buildReplacement(addr, &(*iptr), patchBlock, true, point, handler);
-			    // } 
+			    // }
+					if(iptr->getOperation().getID() == e_nop) {
+						cout<<"*******found noop\n";
+					}
 			    if(isCMOVCC(iptr->getOperation().getID()) &&
 						 (!mutatedBranch(addr, COND_NOT_TAKEN) ||
 							!mutatedBranch(addr, COND_TAKEN)) && 
@@ -208,8 +213,9 @@ int main(int argc, char **argv){
 			      Expression::Ptr ePtr = operands[0].getValue();
 			      ePtr->apply(myVisitor);
 						BPatch_snippet *dst = NULL;
-						if(myVisitor->isRegister)
+						if(myVisitor->isRegister) {
 							dst = new BPatch_registerExpr(myVisitor->getRegUsed());
+						}
 						else if(myVisitor->isDereference) {
 							set<BPatch_opCode> axs;
 							axs.insert(BPatch_opStore);
@@ -228,14 +234,14 @@ int main(int argc, char **argv){
 						//dstReg = myVisitor->getRegUsed();
 
 						if(!mutatedBranch(addr, COND_NOT_TAKEN)) {
-						  BPatch_constExpr *setZero = new BPatch_constExpr(0);
+						  BPatch_constExpr *setZero = new BPatch_constExpr(false);
 		          BPatch_arithExpr *mov= new BPatch_arithExpr(BPatch_assign, *dst, *setZero);
               handler = PatchAPI::convert(mov);
 							condition = COND_NOT_TAKEN;
 							conditionString = "SET0";
 							//cout<<"  setting "<<dstReg.name()<<" to 0\n";
 						} else if(!mutatedBranch(addr, COND_TAKEN)) {
-             BPatch_constExpr *setOne = new BPatch_constExpr(1);
+             BPatch_constExpr *setOne = new BPatch_constExpr(true);
 		          BPatch_arithExpr *mov= new BPatch_arithExpr(BPatch_assign, *dst, *setOne);
               handler = PatchAPI::convert(mov);
 							condition = COND_TAKEN;
