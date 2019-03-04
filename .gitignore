@@ -1,2 +1,4 @@
 *.lst
 tags
+*.dump
+*-mutants/

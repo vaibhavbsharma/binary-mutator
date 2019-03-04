@@ -2,15 +2,10 @@ HEADERS = BuildReplacement.h MyVisitor.h InsnUtils.h Mutation.h make-mutants.pl
 
 DYNINST_INSTALL_ROOT = /export/scratch/vaibhav/dyninst/build-install
 TBB_INCLUDE_DIRS=/export/scratch/vaibhav/tbb/tbb2019_20181203oss/include
-LIBDWARF_LIBRARIES_DIR=/export/scratch/vaibhav/elfutils/elfutils-install/
-
-
-PATH_BOOST=/export/scratch/vaibhav/boost_1_69_0/boost-install
-TBB_tbb_LIBRARY_RELEASE=/export/scratch/vaibhav/tbb/tbb2019_20181203oss/lib/intel64/gcc4.7/libtbb.so 
 LIBELF_INCLUDE_DIR=/export/scratch/vaibhav/elfutils/elfutils-install/include 
 LIBELF_LIBRARIES=/export/scratch/vaibhav/elfutils/elfutils-install/lib/  
 LIBDWARF_INCLUDE_DIR=/export/scratch/vaibhav/elfutils/elfutils-install/include/ 
-LIBDWARF_LIBRARIES=/export/scratch/vaibhav/elfutils/elfutils-install/lib/
+LIBDWARF_LIBRARIES_DIR=/export/scratch/vaibhav/elfutils/elfutils-install/
 
 
 default: ReplaceInsn CMOVReplace dyninst-test small-cmov-eg small-setcc-eg
