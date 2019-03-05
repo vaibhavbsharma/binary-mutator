@@ -11,74 +11,74 @@ using namespace std;
 class MyVisitor: public Dyninst::InstructionAPI::Visitor {
   public :
     MyVisitor ( bool _debug=false) { 
-			isImmediate = 0; 
-			regUsed = Dyninst::x86_64::rip; 
-			immediateValue = -1;
-			isDereference = false;
-			isRegister = false;
-			debug = _debug;
-		};
+      isImmediate = 0; 
+      regUsed = Dyninst::x86_64::rip; 
+      immediateValue = -1;
+      isDereference = false;
+      isRegister = false;
+      debug = _debug;
+    };
     ~MyVisitor () {};
 
-		bool debug;
-		bool isDereference, isRegister, isBinaryFunction, isImmediate;
+    bool debug;
+    bool isDereference, isRegister, isBinaryFunction, isImmediate;
 
-		int getImmediateValue() {
-			assert(isImmediate);
-			if(debug) cout<<" returning immediateValue ("<<immediateValue<<") ";
-			return immediateValue; 
-		}
+    int getImmediateValue() {
+      assert(isImmediate);
+      if(debug) cout<<" returning immediateValue ("<<immediateValue<<") ";
+      return immediateValue; 
+    }
 
-		Dyninst::MachRegister regUsed;
-		const Dyninst::MachRegister getRegUsed() {
-			assert(isRegister);
-			if(debug) cout<< " returning reg("<<regUsed.name()<<") ";
-			return regUsed; 
-		}
+    Dyninst::MachRegister regUsed;
+    const Dyninst::MachRegister getRegUsed() {
+      assert(isRegister);
+      if(debug) cout<< " returning reg("<<regUsed.name()<<") ";
+      return regUsed; 
+    }
 
-		int immediateValue;
+    int immediateValue;
     bool getIsImmediate() { return isImmediate; }
     
-		virtual void visit ( Dyninst::InstructionAPI::BinaryFunction * b ) {
-			if (debug) cout <<" \tVisiting BinaryFunction\n";
-			isBinaryFunction = true;
-			isImmediate = isRegister = isDereference = false;
+    virtual void visit ( Dyninst::InstructionAPI::BinaryFunction * b ) {
+      if (debug) cout <<" \tVisiting BinaryFunction\n";
+      isBinaryFunction = true;
+      isImmediate = isRegister = isDereference = false;
     };
 
     virtual void visit ( Dyninst::InstructionAPI::Immediate * i ) {
-			Dyninst::InstructionAPI::Result result = i->eval();
-			if(debug) cout << " \t Immediate value = " << result.format()<<" ";
-			//Dyninst::InstructionAPI::s32 ret = (Dyninst::InstructionAPI::s32) result.convert();
-			//immediateValue = (int) ret;
-			immediateValue = result.convert<int>();
+      Dyninst::InstructionAPI::Result result = i->eval();
+      if(debug) cout << " \t Immediate value = " << result.format()<<" ";
+      //Dyninst::InstructionAPI::s32 ret = (Dyninst::InstructionAPI::s32) result.convert();
+      //immediateValue = (int) ret;
+      immediateValue = result.convert<int>();
       isImmediate = true;
-			isDereference = isRegister = isBinaryFunction = false;
+      isDereference = isRegister = isBinaryFunction = false;
     };
 
     virtual void visit ( Dyninst::InstructionAPI::RegisterAST * r ) {
       if(debug) {
-				cout <<" \tVisiting register " << r -> getID ().name ()<< " " << r->format()<<endl;
-			}
-			Dyninst::InstructionAPI::RegisterAST::Ptr rPtr = Dyninst::InstructionAPI::RegisterAST::promote(r);
+        cout <<" \tVisiting register " << r -> getID ().name ()<< " " << r->format()<<endl;
+      }
+      Dyninst::InstructionAPI::RegisterAST::Ptr rPtr = Dyninst::InstructionAPI::RegisterAST::promote(r);
       if(debug) {
-				cout <<" \trPtr" << rPtr->getID().name()<< " " << rPtr->format()<<endl;
-			}
-			regUsed = rPtr->getID();
-			if(r -> getID() == Dyninst::x86_64::eax) {
-				if(debug) cout<<" visited eax ("<<regUsed.name()<<")";
-			}
-			isDereference = isImmediate = isBinaryFunction = false;
-			isRegister = true;
+        cout <<" \trPtr" << rPtr->getID().name()<< " " << rPtr->format()<<endl;
+      }
+      regUsed = rPtr->getID();
+      if(r -> getID() == Dyninst::x86_64::eax) {
+        if(debug) cout<<" visited eax ("<<regUsed.name()<<")";
+      }
+      isDereference = isImmediate = isBinaryFunction = false;
+      isRegister = true;
     }
     
-		virtual void visit ( Dyninst::InstructionAPI::Dereference * d ) {
-			if (debug) cout <<" \tVisiting Dereference ";
-			/*std::vector<Dyninst::InstructionAPI::InstructionAST::Ptr> children;
-			d->getChildren(children);
-			Dyninst::InstructionAPI::Result result = (*children[0]).eval();
-			unsigned long long address = result.convert<unsigned long long>();
-			cout<<" address = "<<address<<" result = "<<result.format()<<endl;*/
-			isDereference = true;
-			isRegister = isImmediate = isBinaryFunction = false;
-		};
+    virtual void visit ( Dyninst::InstructionAPI::Dereference * d ) {
+      if (debug) cout <<" \tVisiting Dereference ";
+      /*std::vector<Dyninst::InstructionAPI::InstructionAST::Ptr> children;
+      d->getChildren(children);
+      Dyninst::InstructionAPI::Result result = (*children[0]).eval();
+      unsigned long long address = result.convert<unsigned long long>();
+      cout<<" address = "<<address<<" result = "<<result.format()<<endl;*/
+      isDereference = true;
+      isRegister = isImmediate = isBinaryFunction = false;
+    };
 };

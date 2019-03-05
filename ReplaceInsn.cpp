@@ -220,7 +220,8 @@ int main(int argc, char **argv){
                 BPatch_arithExpr *mov= new BPatch_arithExpr(BPatch_assign, *dst, *src);
                 BPatch_snippet *r10TOr12_mov = new BPatch_arithExpr(BPatch_seq, *r10TOr12, *mov);
                 BPatch_snippet *finalMov = new BPatch_arithExpr(BPatch_seq, *r10TOr12_mov, *r12TOr10);
-                handler = PatchAPI::convert(finalMov);
+                handler = PatchAPI::convert(mov);
+                //handler = PatchAPI::convert(finalMov);
               } else { // dst is immediate which makes no sense
                 BPatch_constExpr *dst = new BPatch_constExpr(myVisitor->getImmediateValue());
                 BPatch_arithExpr *mov= new BPatch_arithExpr(BPatch_assign, *dst, *src);
