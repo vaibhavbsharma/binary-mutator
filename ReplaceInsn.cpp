@@ -146,7 +146,7 @@ int main(int argc, char **argv){
             clobberThisReg = GetNextReg(clobberThisReg);
           }  
           BPatch_registerExpr *r12 = new BPatch_registerExpr(clobberThisReg);
-          BPatch_registerExpr *r10 = new BPatch_registerExpr(Dyninst::x86_64::r10);
+          BPatch_snippet *r10 = new BPatch_registerExpr(Dyninst::x86_64::r10);
           BPatch_snippet *r10TOr12 = new BPatch_arithExpr(BPatch_assign, *r12, *r10);
           BPatch_snippet *r12TOr10 = new BPatch_arithExpr(BPatch_assign, *r10, *r12);
           BPatch_snippet *nop = new BPatch_arithExpr(BPatch_seq, *r10TOr12, *r12TOr10);
@@ -182,6 +182,7 @@ int main(int argc, char **argv){
                 patchBlock, (Address)addr);
             Point *point = pointMaker->createPoint(loc, Point::Type::PreInsn);
             Snippet::Ptr handler;
+	    BPatch_snippet *prefix = NULL;
             if(!mutatedBranch(addr, COND_NOT_TAKEN)) {
               handler = PatchAPI::convert(nop);
               condition = COND_NOT_TAKEN;
@@ -209,7 +210,12 @@ int main(int argc, char **argv){
                   }
                 }
                 BPatch_snippet *eae = new BPatch_effectiveAddressExpr(); 
-                src = eae;
+                BPatch_snippet *prefix1 = 
+		  new BPatch_arithExpr(BPatch_assign, *r10, *eae);
+		BPatch_snippet *deref = new BPatch_arithExpr(BPatch_deref, *r10);
+		BPatch_snippet *prefix2 = new BPatch_arithExpr(BPatch_assign, *r10, *deref); 
+                prefix = new BPatch_arithExpr(BPatch_seq, *prefix1, *prefix2); 
+		src = r10;
               }
               myVisitor = new MyVisitor(debug);
               ePtr = operands[0].getValue();
@@ -218,10 +224,10 @@ int main(int argc, char **argv){
               if(myVisitor->isRegister) {
                 BPatch_registerExpr *dst = new BPatch_registerExpr(myVisitor->getRegUsed());
                 BPatch_arithExpr *mov= new BPatch_arithExpr(BPatch_assign, *dst, *src);
-                BPatch_snippet *r10TOr12_mov = new BPatch_arithExpr(BPatch_seq, *r10TOr12, *mov);
-                BPatch_snippet *finalMov = new BPatch_arithExpr(BPatch_seq, *r10TOr12_mov, *r12TOr10);
-                handler = PatchAPI::convert(mov);
-                //handler = PatchAPI::convert(finalMov);
+                BPatch_snippet *finalMov = prefix != NULL ? 
+		  new BPatch_arithExpr(BPatch_seq, *prefix, *mov) : mov;
+                //handler = PatchAPI::convert(mov);
+                handler = PatchAPI::convert(finalMov);
               } else { // dst is immediate which makes no sense
                 BPatch_constExpr *dst = new BPatch_constExpr(myVisitor->getImmediateValue());
                 BPatch_arithExpr *mov= new BPatch_arithExpr(BPatch_assign, *dst, *src);
