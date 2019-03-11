@@ -147,6 +147,7 @@ int main(int argc, char **argv){
           }  
           BPatch_registerExpr *r12 = new BPatch_registerExpr(clobberThisReg);
           BPatch_snippet *r10 = new BPatch_registerExpr(Dyninst::x86_64::r10);
+          BPatch_snippet *r10d = new BPatch_registerExpr(Dyninst::x86_64::r10d);
           BPatch_snippet *r10TOr12 = new BPatch_arithExpr(BPatch_assign, *r12, *r10);
           BPatch_snippet *r12TOr10 = new BPatch_arithExpr(BPatch_assign, *r10, *r12);
           BPatch_snippet *nop = new BPatch_arithExpr(BPatch_seq, *r10TOr12, *r12TOr10);
@@ -209,7 +210,7 @@ int main(int argc, char **argv){
                     point = PatchAPI::convert(thisPoint, BPatch_callBefore);
                   }
                 }
-                BPatch_snippet *eae = new BPatch_effectiveAddressExpr(); 
+                BPatch_snippet *eae = new BPatch_effectiveAddressExpr(0, 8); 
                 BPatch_snippet *prefix1 = 
 		  new BPatch_arithExpr(BPatch_assign, *r10, *eae);
 		BPatch_snippet *deref = new BPatch_arithExpr(BPatch_deref, *r10);
@@ -280,8 +281,16 @@ int main(int argc, char **argv){
                   point = PatchAPI::convert(thisPoint, BPatch_callBefore);
                 }
               }
-              BPatch_effectiveAddressExpr *eae = new BPatch_effectiveAddressExpr(); 
+              BPatch_effectiveAddressExpr *eae = new BPatch_effectiveAddressExpr(0, 1); 
               dst = eae;
+              //BPatch_snippet *eae = new BPatch_effectiveAddressExpr(); 
+              //BPatch_snippet *prefix1 = 
+	      //  new BPatch_arithExpr(BPatch_assign, *r10, *eae);
+	      //BPatch_snippet *deref = new BPatch_arithExpr(BPatch_deref, *r10);
+	      //BPatch_snippet *prefix2 = new BPatch_arithExpr(BPatch_assign, *r10, *deref); 
+              //prefix = new BPatch_arithExpr(BPatch_seq, *prefix1, *prefix2); 
+	      //src = r10;
+
             }
             BPatch_snippet *zero = new BPatch_constExpr(0);
             BPatch_snippet *one = new BPatch_constExpr(1);

@@ -59,11 +59,8 @@ class MyVisitor: public Dyninst::InstructionAPI::Visitor {
       if(debug) {
         cout <<" \tVisiting register " << r -> getID ().name ()<< " " << r->format()<<endl;
       }
-      Dyninst::InstructionAPI::RegisterAST::Ptr rPtr = Dyninst::InstructionAPI::RegisterAST::promote(r);
-      if(debug) {
-        cout <<" \trPtr" << rPtr->getID().name()<< " " << rPtr->format()<<endl;
-      }
-      regUsed = rPtr->getID();
+      //Dyninst::InstructionAPI::RegisterAST::Ptr rPtr = Dyninst::InstructionAPI::RegisterAST::promote(r);
+      regUsed = r->getID();
       if(r -> getID() == Dyninst::x86_64::eax) {
         if(debug) cout<<" visited eax ("<<regUsed.name()<<")";
       }

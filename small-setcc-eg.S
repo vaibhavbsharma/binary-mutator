@@ -10,7 +10,8 @@ newline:
 #_start:
 .globl main
 main:
-	mov	0(%rsp), %rax
+#mov	0(%rsp), %rax
+        mov	%rdi, %rax
 	cmp	$2, %rax
 	sete	str
 	shlb	$1, str

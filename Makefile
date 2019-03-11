@@ -7,7 +7,7 @@ LIBELF_LIBRARIES=/export/scratch/vaibhav/elfutils/elfutils-install/lib/
 LIBDWARF_INCLUDE_DIR=LIBELF_INCLUDE_DIR 
 LIBDWARF_LIBRARIES=LIBELF_LIBRARIES
 
-default: ReplaceInsn CMOVReplace dyninst-test small-cmov-eg small-setcc-eg PrintInsns
+default: ReplaceInsn CMOVReplace dyninst-test small-cmov-eg small-cmov-eg-1 small-setcc-eg 
 
 ReplaceInsn: ReplaceInsn.cpp $(HEADERS)
 	    c++ ReplaceInsn.cpp -g -o ReplaceInsn  \
@@ -15,14 +15,6 @@ ReplaceInsn: ReplaceInsn.cpp $(HEADERS)
 	      -I $(DYNINST_INSTALL_ROOT)/include -I $(TBB_INCLUDE_DIRS) \
 	      -I $(LIBELF_INCLUDE_DIR) -I $(LIBDWARF_INCLUDE_DIR) \
 	      -ldyninstAPI -linstructionAPI -ldw -lelf -lpatchAPI -lsymtabAPI -std=c++0x -lparseAPI -lcommon -lboost_system
-
-PrintInsns: PrintInsns.cpp $(HEADERS)
-	    c++ PrintInsns.cpp -g -o PrintInsns  \
-	      -L $(DYNINST_INSTALL_ROOT)/lib -L $(LIBDWARF_LIBRARIES)/lib -L $(LIBELF_LIBRARIES) \
-	      -I $(DYNINST_INSTALL_ROOT)/include -I $(TBB_INCLUDE_DIRS) \
-	      -I $(LIBELF_INCLUDE_DIR) -I $(LIBDWARF_INCLUDE_DIR) \
-	      -ldyninstAPI -linstructionAPI -ldw -lelf -lpatchAPI -lsymtabAPI -std=c++0x -lparseAPI -lcommon -lboost_system
-
 
 
 CMOVReplace : CMOVReplace.cpp $(HEADERS)
@@ -40,6 +32,9 @@ dyninst-test: dyninst-test.c
 
 small-cmov-eg: small-cmov-eg.S
 	    gcc small-cmov-eg.S -o small-cmov-eg
+
+small-cmov-eg-1: small-cmov-eg-1.S
+	    gcc small-cmov-eg-1.S -o small-cmov-eg-1
 
 small-setcc-eg: small-setcc-eg.S
 	    gcc small-setcc-eg.S -o small-setcc-eg
