@@ -3,7 +3,7 @@ This is a Dyninst-based binary mutator that mutates every flag-use instruction i
 
 You can run this tool using make-mutants.pl as follows:
 
-    perl make-mutants.pl binary1
+    perl make-mutants.pl binary1 [function-name] [debug-on=1, debug-off=0]
     
 This will create a new binary file for every flag-use instruction in binary1. The new binaries will be named as binary1-<flag-use-insn-address>-<jCC/setCC/cmovCC>-<condition> where condition will be CT (Condition Taken) or CNT (Condition Not Taken) for jCC instructions, NOP or MOV for cmovCC instructions and SET0 or SET1 for setCC instructions.
 
