@@ -210,13 +210,13 @@ int main(int argc, char **argv){
                     point = PatchAPI::convert(thisPoint, BPatch_callBefore);
                   }
                 }
-                BPatch_snippet *eae = new BPatch_effectiveAddressExpr(0, 8); 
+                BPatch_snippet *eae = new BPatch_effectiveAddressExpr(0, 4); //hard-coded for now to test small-cmov-eg-1. The actual value of the size parameter depends on the size of the destination operand. 
                 BPatch_snippet *prefix1 = 
-		  new BPatch_arithExpr(BPatch_assign, *r10, *eae);
-		BPatch_snippet *deref = new BPatch_arithExpr(BPatch_deref, *r10);
-		BPatch_snippet *prefix2 = new BPatch_arithExpr(BPatch_assign, *r10, *deref); 
+		  new BPatch_arithExpr(BPatch_assign, *r10d, *eae);
+		BPatch_snippet *deref = new BPatch_arithExpr(BPatch_deref, *r10d);
+		BPatch_snippet *prefix2 = new BPatch_arithExpr(BPatch_assign, *r10d, *deref); 
                 prefix = new BPatch_arithExpr(BPatch_seq, *prefix1, *prefix2); 
-		src = r10;
+		src = r10d;
               }
               myVisitor = new MyVisitor(debug);
               ePtr = operands[0].getValue();
